@@ -1,0 +1,175 @@
+{% extends 'bursary/base.html' %}
+{% load form_extras %}
+
+{% block title %}Apply for Bursary{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="mb-4 text-center">📋 Bursary Application Form</h2>
+
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- 1. Student Details -->
+            <h4 class="mt-4">1. Personal Details</h4>
+            {% for field in student_form %}
+              <div class="mb-3">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field|add_class:"form-control" }}
+                {% if field.help_text %}
+                  <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+                {% if field.errors %}
+                  <div class="text-danger small">{{ field.errors.0 }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+            <!-- 1.1 Additional Student Details (Disability and Bursary Checkbox) -->
+            <div class="form-check mb-2">
+              <input type="checkbox" class="form-check-input" name="has_disability" id="has_disability">
+              <label class="form-check-label" for="has_disability">I have a disability</label>
+            </div>
+            <div id="disability_details" class="mb-3" style="display: none;">
+              <label class="form-label" for="disability_details_text">Please provide details of your disability:</label>
+              <textarea class="form-control" name="disability_details" id="disability_details_text" rows="3"></textarea>
+            </div>
+            <div class="form-check mb-3">
+              <input type="checkbox" class="form-check-input" name="received_bursary_before" id="received_bursary_before">
+              <label class="form-check-label" for="received_bursary_before">I have received a bursary before</label>
+            </div>
+            <div id="previous_bursary_details" class="mb-3" style="display: none;">
+              <label class="form-label" for="previous_bursary_details_text">Please provide details of the previous bursary received:</label>
+              <textarea class="form-control" name="previous_bursary_details" id="previous_bursary_details_text" rows="3"></textarea>
+            </div>
+
+            <!-- 2. Guardian Info -->
+            <h4 class="mt-4">2. Parent/Guardian Information</h4>
+            {% for field in guardian_form %}
+              <div class="mb-3">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field|add_class:"form-control" }}
+                {% if field.help_text %}
+                  <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+                {% if field.errors %}
+                  <div class="text-danger small">{{ field.errors.0 }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+            <!-- 3. Application Info -->
+            <h4 class="mt-4">3. Application Details</h4>
+
+            <!-- Show Constituency as read-only input -->
+            <div class="mb-3">
+              <label class="form-label" for="id_constituency">Constituency</label>
+              <input type="text" class="form-control" id="id_constituency" name="constituency" value="{{ student.constituency.name }}" readonly>
+            </div>
+
+            <!-- Other application form fields -->
+            {% for field in application_form %}
+              {% if field.name != 'constituency' %}
+                <div class="mb-3">
+                  <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field|add_class:"form-control" }}
+                  {% if field.help_text %}
+                    <div class="form-text">{{ field.help_text }}</div>
+                  {% endif %}
+                  {% if field.errors %}
+                    <div class="text-danger small">{{ field.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+
+            <!-- 4. Sibling Info -->
+            <h4 class="mt-4">4. Siblings in School</h4>
+            <p>You can list any siblings currently in school.</p>
+            {{ sibling_formset.management_form }}
+            {% for form in sibling_formset %}
+              <div class="border p-3 mb-3 rounded shadow-sm bg-light">
+                {% for field in form.visible_fields %}
+                  <div class="mb-2">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                    {% if field.errors %}
+                      <div class="text-danger small">{{ field.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+                {% if form.can_delete %}
+                  <div class="form-check">
+                    {{ form.DELETE }} <label class="form-check-label">Remove this sibling</label>
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+            <!-- 5. Supporting Documents -->
+            <h4 class="mt-4">5. Supporting Documents</h4>
+            <p>Please upload the following documents:</p>
+            <ul>
+              <li>Admission Letter</li>
+              <li>School Fee Structure</li>
+              <li>Copy of ID/Birth Certificate</li>
+              <li>KCPE/KCSE/Previous Results</li>
+              <li>Death Certificate (if orphan)</li>
+              <li>Disability Certificate (if applicable)</li>
+            </ul>
+
+            <div class="mb-3">
+              <label class="form-label">Upload Documents (Multiple):</label>
+              <input type="file" name="files[]" multiple class="form-control" required>
+              <small class="form-text text-muted">Hold Ctrl (or Cmd) to select multiple files.</small>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center mt-4">
+              <button type="submit" class="btn btn-primary px-5">Submit Application</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleDisabilityDetails() {
+    var disabilityDetails = document.getElementById('disability_details');
+    disabilityDetails.style.display = document.getElementById('has_disability').checked ? 'block' : 'none';
+  }
+
+  function togglePreviousBursaryDetails() {
+    var bursaryDetails = document.getElementById('previous_bursary_details');
+    bursaryDetails.style.display = document.getElementById('received_bursary_before').checked ? 'block' : 'none';
+  }
+
+  document.getElementById('has_disability').addEventListener('change', toggleDisabilityDetails);
+  document.getElementById('received_bursary_before').addEventListener('change', togglePreviousBursaryDetails);
+</script>
+
+<div class="mt-4">
+  {% if application_deadline %}
+    <div class="deadline-ticker-wrapper">
+      <div class="deadline-ticker">
+        ⏳ Deadline: {{ application_deadline|date:"F j, Y" }} – Don’t wait until the last minute!
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+
+
+
+
+

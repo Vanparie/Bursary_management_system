@@ -1,0 +1,36 @@
+{% extends 'bursary/base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Application Details</h3>
+
+  <p><strong>Student:</strong> {{ application.student.full_name }}</p>
+  <p><strong>Institution:</strong> {{ application.student.institution }}</p>
+  <p><strong>Fees Required:</strong> KES {{ application.fees_required }}</p>
+  <p><strong>Fees Paid:</strong> KES {{ application.fees_paid }}</p>
+  <p><strong>Requested:</strong> KES {{ application.amount_requested }}</p>
+  <p><strong>Status:</strong> {{ application.status }}</p>
+
+  {% if application.supporting_doc %}
+    <p><strong>Document:</strong> <a href="{{ application.supporting_doc.url }}" target="_blank">View</a></p>
+  {% endif %}
+
+  <form method="POST" action="{% url 'update_application_status' application.id %}">
+    {% csrf_token %}
+    <div class="form-group mt-3">
+      <label>Change Status:</label><br>
+      <select name="status" class="form-control w-25" required>
+        <option value="">--Select--</option>
+        <option value="approved">Approve</option>
+        <option value="rejected">Reject</option>
+      </select>
+    </div>
+    <div class="form-group mt-3">
+      <label>Feedback (optional):</label>
+      <textarea name="feedback" class="form-control" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-success mt-2">Submit Decision</button>
+  </form>
+
+  <a href="{% url 'officer_dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}

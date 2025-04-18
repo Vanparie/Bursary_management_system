@@ -1,0 +1,103 @@
+{% extends 'bursary/base.html' %}
+
+{% block title %}Application Preview{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <h3 class="mb-3">📄 Bursary Application Preview</h3>
+  <hr>
+
+  <!-- Student Details -->
+  <h5 class="mt-4">1. Student Details</h5>
+  <ul class="list-unstyled">
+    <li><strong>Name:</strong> {{ student.full_name|default:"-" }}</li>
+    <li><strong>Admission No:</strong> {{ student.admission_number }}</li>
+    <li><strong>ID No:</strong> {{ student.id_number }}</li>
+    <li><strong>Institution:</strong> {{ student.institution }}</li>
+    <li><strong>Course:</strong> {{ student.course }}</li>
+    <li><strong>Year:</strong> {{ student.year_of_study }}</li>
+    <li><strong>Category:</strong> {{ student.category }}</li>
+    <li><strong>Phone:</strong> {{ student.phone }}</li>
+  </ul>
+
+  <!-- Guardian Info -->
+  <h5 class="mt-4">2. Guardian Information</h5>
+  {% if guardians %}
+    <ul class="list-unstyled">
+      {% for guardian in guardians %}
+        <li>
+          <strong>Name:</strong> {{ guardian.name }} ({{ guardian.relationship }})<br>
+          <strong>Phone:</strong> {{ guardian.phone }}<br>
+          <strong>Occupation:</strong> {{ guardian.occupation }}<br>
+          <strong>Income:</strong> KES {{ guardian.income|floatformat:0 }}
+        </li>
+        <hr>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">No guardian information available.</p>
+  {% endif %}
+
+  <!-- Application Details -->
+  <h5 class="mt-4">3. Application Details</h5>
+  <ul class="list-unstyled">
+    <li><strong>Fees Required:</strong> KES {{ application.fees_required }}</li>
+    <li><strong>Fees Paid:</strong> KES {{ application.fees_paid }}</li>
+    <li><strong>Amount Requested:</strong> <strong class="text-primary">KES {{ application.amount_requested }}</strong></li>
+    <li><strong>Status:</strong> 
+      <span class="badge 
+        {% if application.status == 'approved' %}bg-success
+        {% elif application.status == 'rejected' %}bg-danger
+        {% else %}bg-warning text-dark
+        {% endif %}">
+        {{ application.status|title }}
+      </span>
+    </li>
+    <li><strong>Feedback:</strong> {{ application.feedback|default:"N/A" }}</li>
+    <li><strong>Bursary Type:</strong> {{ application.get_bursary_type_display }}</li>
+  </ul>
+
+  <!-- Siblings Section -->
+  <h5 class="mt-4">4. Siblings in School</h5>
+  {% if siblings %}
+    <ul class="list-unstyled">
+      {% for sib in siblings %}
+        <li>{{ sib.name }} - {{ sib.school }} ({{ sib.class_level }})</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">No siblings listed.</p>
+  {% endif %}
+
+  <!-- Documents Section -->
+  <h5 class="mt-4">5. Uploaded Documents</h5>
+  {% if documents %}
+    <ul class="list-unstyled">
+      {% for doc in documents %}
+        <li><strong>{{ doc.get_document_type_display }}:</strong>
+            <a href="{{ doc.file.url }}" target="_blank">📎 View</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">No documents uploaded.</p>
+  {% endif %}
+
+  <!-- Action Buttons -->
+  <div class="mt-4">
+    <button onclick="window.print()" class="btn btn-outline-secondary me-2">🖨️ Print</button>
+    <a href="{% url 'application_pdf' %}" class="btn btn-outline-primary">⬇️ Download as PDF</a>
+  </div>
+</div>
+{% endblock %}
+
+

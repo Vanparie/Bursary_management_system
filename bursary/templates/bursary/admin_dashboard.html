@@ -1,0 +1,70 @@
+{% extends 'bursary/base.html' %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+
+<!-- Filter/Search -->
+<form method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" name="q" placeholder="Search student..." value="{{ query }}" class="form-control">
+    </div>
+    <div class="col-md-4">
+        <select name="status" class="form-control">
+            <option value="">All Statuses</option>
+            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified</option>
+            <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary">Filter</button>
+    </div>
+</form>
+
+<div class="mb-3">
+  <a href="{% url 'export_applications_csv' %}" class="btn btn-outline-success">
+    ⬇️ Export Applications (CSV)
+  </a>
+</div>
+
+<!-- Applications Table -->
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Student</th>
+            <th>Fees (KES)</th>
+            <th>Status</th>
+            <th>Feedback</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for app in applications %}
+        <tr>
+            <td>{{ app.student.full_name }} ({{ app.student.admission_number }})</td>
+            <td>{{ app.fees_required|floatformat:0 }}</td>
+            <td>{{ app.get_status_display }}</td>
+            <td>{{ app.feedback|default:"-" }}</td>
+            <td>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="application_id" value="{{ app.id }}">
+                    <select name="status" class="form-control mb-1">
+                        <option value="pending" {% if app.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="verified" {% if app.status == 'verified' %}selected{% endif %}>Verified</option>
+                        <option value="approved" {% if app.status == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                    <textarea name="feedback" placeholder="Feedback..." rows="2" class="form-control mb-1">{{ app.feedback }}</textarea>
+                    <button type="submit" class="btn btn-sm btn-success">Update</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No applications found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

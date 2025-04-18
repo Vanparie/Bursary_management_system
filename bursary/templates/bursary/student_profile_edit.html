@@ -1,0 +1,36 @@
+{% extends 'bursary/base.html' %}
+{% load form_extras %}
+{% block title %}Edit Profile{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Edit My Profile</h3>
+  <form method="POST">
+    {% csrf_token %}
+
+    <h5>Personal Info</h5>
+    {% for field in student_form %}
+      <div class="mb-3">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field|add_class:"form-control" }}
+        {% if field.errors %}
+          <div class="text-danger small">{{ field.errors.0 }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <h5>Account Info</h5>
+    {% for field in user_form %}
+      <div class="mb-3">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field|add_class:"form-control" }}
+        {% if field.errors %}
+          <div class="text-danger small">{{ field.errors.0 }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a href="{% url 'student_profile' %}" class="btn btn-secondary ms-2">Back</a>
+  </form>
+</div>
+{% endblock %}

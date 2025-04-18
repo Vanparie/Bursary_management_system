@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Application PDF</title>
+    <style>
+        body { font-family: 'Helvetica'; font-size: 12px; }
+        h2, h4 { margin-bottom: 5px; }
+        .section { margin-top: 15px; }
+        .label { font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h2>Bursary Application Summary</h2>
+<hr>
+
+<div class="section">
+  <h4>Student Info</h4>
+  <p><span class="label">Name:</span> {{ student.full_name }}</p>
+  <p><span class="label">Admission Number:</span> {{ student.admission_number }}</p>
+  <p><span class="label">ID Number:</span> {{ student.id_number }}</p>
+  <p><span class="label">Institution:</span> {{ student.institution }}</p>
+  <p><span class="label">Course:</span> {{ student.course }}</p>
+</div>
+
+<div class="section">
+  <h4>Guardian Info</h4>
+  <p><span class="label">Name:</span> {{ guardian.name }}</p>
+  <p><span class="label">Phone:</span> {{ guardian.phone }}</p>
+  <p><span class="label">Income:</span> KES {{ guardian.income|floatformat:0 }}</p>
+</div>
+
+<div class="section">
+  <h4>Application Info</h4>
+  <p><span class="label">Fees Required:</span> KES {{ application.fees_required }}</p>
+  <p><span class="label">Amount Requested:</span> KES {{ application.amount_requested }}</p>
+  <p><span class="label">Status:</span> {{ application.status|title }}</p>
+</div>
+
+<div class="section">
+  <h4>Siblings</h4>
+  {% if siblings %}
+    <ul>
+      {% for s in siblings %}
+      <li>{{ s.name }} - {{ s.school }} ({{ s.class_level }})</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No siblings listed.</p>
+  {% endif %}
+</div>
+
+</body>
+</html>

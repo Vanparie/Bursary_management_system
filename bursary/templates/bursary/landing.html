@@ -1,0 +1,58 @@
+{% extends 'bursary/base.html' %}
+
+{% block title %}Welcome to the Bursary System{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold">Welcome to the Bursary Management System</h1>
+    <p class="lead">A trusted platform for students to apply and track bursary applications across Kenyan counties and constituencies.</p>
+
+    <!-- Display Site Logo if exists -->
+    {% if site_profile.logo %}
+        <img src="{{ site_profile.logo.url }}" alt="Site Logo" class="img-fluid" style="max-width: 150px; margin-bottom: 20px;">
+    {% endif %}
+
+    <a href="{% url 'student_signup' %}" class="btn btn-primary btn-lg mt-3">Get Started</a>
+</div>
+
+<!-- Deadline Ticker -->
+{% if site_profile and site_profile.application_deadline %}
+  <div class="deadline-ticker-wrapper">
+    <div class="deadline-ticker">
+      📢 Application Deadline: {{ site_profile.application_deadline|date:"F j, Y" }} – Submit your application on time!
+    </div>
+  </div>
+{% endif %}
+
+<!-- Information on the application process -->
+<div class="row mt-5 text-center">
+    <div class="col-md-4">
+        <h3>📄 Simple Application</h3>
+        <p>Apply online in minutes. Upload required documents with ease.</p>
+    </div>
+    <div class="col-md-4">
+        <h3>✅ Transparent Process</h3>
+        <p>Track your application status and get real-time updates.</p>
+    </div>
+    <div class="col-md-4">
+        <h3>🔒 Secure & Reliable</h3>
+        <p>Your data is protected with industry-standard security protocols.</p>
+    </div>
+</div>
+
+<div class="mt-5 p-5 bg-light rounded text-center">
+    <h2>How It Works</h2>
+    <ol class="list-unstyled">
+        <li>1️⃣ Register an account using your email</li>
+        <li>2️⃣ Fill in your personal and academic details</li>
+        <li>3️⃣ Upload supporting documents</li>
+        <li>4️⃣ Submit your application</li>
+        <li>5️⃣ Track your application and get updates via SMS</li>
+    </ol>
+</div>
+
+<div class="text-center mt-5">
+    <a href="{% url 'student_login' %}" class="btn btn-outline-dark btn-lg">Already have an account? Login</a>
+</div>
+{% endblock %}
+

@@ -1,0 +1,20 @@
+{% extends 'bursary/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">My Officer Profile</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <p><strong>Full Name:</strong> {{ officer.user.get_full_name }}</p>
+            <p><strong>Email:</strong> {{ officer.user.email }}</p>
+            <p><strong>Username:</strong> {{ officer.user.username }}</p>
+            {% if officer.constituency.county %}
+                <p><strong>County:</strong> {{ officer.constituency.county.name }}</p>
+            {% endif %}
+            <p><strong>Constituency:</strong> {{ officer.constituency.name }}</p>
+            <p><strong>Bursary Type:</strong> {{ officer.bursary_type|capfirst }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

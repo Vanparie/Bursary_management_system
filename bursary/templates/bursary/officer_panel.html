@@ -1,0 +1,58 @@
+{% extends 'bursary/base.html' %}
+{% block title %}Officer Panel{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">🧑‍💼 Applications - {{ request.user.officerprofile.constituency.name }}</h2>
+
+  <form method="get" class="mb-3">
+    <select name="status" onchange="this.form.submit()" class="form-select w-25">
+      <option value="">All Statuses</option>
+      <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+      <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+      <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+    </select>
+  </form>
+
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Feedback</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in applications %}
+        <tr>
+          <td>{{ app.student.full_name }}</td>
+          <td>KES {{ app.amount_requested|floatformat:0 }}</td>
+          <td>{{ app.status|title }}</td>
+          <td>{{ app.feedback|default:"—" }}</td>
+          <td>
+            {% if app.status == 'pending' %}
+              <form method="post" action="{% url 'update_application_status' app.id %}">
+                {% csrf_token %}
+                <div class="input-group">
+                  <select name="status" class="form-select">
+                    <option value="approved">✅ Approve</option>
+                    <option value="rejected">❌ Reject</option>
+                  </select>
+                  <input type="text" name="feedback" class="form-control" placeholder="Optional feedback">
+                  <button class="btn btn-primary">Submit</button>
+                </div>
+              </form>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="text-center">No applications found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

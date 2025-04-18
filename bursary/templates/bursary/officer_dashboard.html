@@ -1,0 +1,34 @@
+{% extends 'bursary/base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Welcome, {{ request.user.username }}</h2>
+  <h4>Applications in your constituency</h4>
+
+  {% if applications %}
+    <table class="table table-bordered mt-3">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+          <tr>
+            <td>{{ app.student.full_name }}</td>
+            <td>{{ app.bursary_type|title }}</td>
+            <td>{{ app.status|title }}</td>
+            <td>{{ app.date_applied|date:"Y-m-d" }}</td>
+            <td><a href="{% url 'application_detail' app.id %}" class="btn btn-primary btn-sm">View</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No applications available.</p>
+  {% endif %}
+</div>
+{% endblock %}

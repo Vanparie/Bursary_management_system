@@ -1,0 +1,81 @@
+{% extends 'bursary/base.html' %}
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+  <div class="container">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+<div class="container mt-4">
+    <h2 class="mb-4">🎓 Welcome, {{ student.full_name|default:request.user.username }}</h2>
+
+    <!-- APPLICATION SUMMARY -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <span>📄 My Bursary Application</span>
+            {% if application %}
+                <span class="badge bg-info">Application #{{ application.id }}</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if application %}
+                <p><strong>Status:</strong>
+                    {% if application.status == "approved" %}
+                        <span class="badge bg-success">Approved</span>
+                    {% elif application.status == "pending" %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif application.status == "rejected" %}
+                        <span class="badge bg-danger">Rejected</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ application.status|capfirst }}</span>
+                    {% endif %}
+                </p>
+
+                <p><strong>Bursary Type:</strong> {{ application.get_bursary_type_display }}</p>
+                <p><strong>Amount Requested:</strong> <span class="text-primary fw-bold">KES {{ application.amount_requested|floatformat:0 }}</span></p>
+                <p><strong>Feedback:</strong> {{ application.feedback|default:"No feedback yet." }}</p>
+
+                <a href="{% url 'application_preview' %}" class="btn btn-outline-info mt-3">🔍 View Full Application</a>
+
+                {% if application.status == 'rejected' %}
+                    <a href="{% url 'apply_bursary' %}" class="btn btn-outline-warning mt-3">Reapply</a>
+                {% endif %}
+            {% else %}
+                <p>You have not submitted any bursary application yet.</p>
+                <a href="{% url 'apply_bursary' %}" class="btn btn-primary mt-2">📝 Apply Now</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- PROFILE & ACCOUNT -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            👤 Account Information
+            <p><strong>Last Login:</strong> {{ request.user.last_login|date:"d M Y H:i" }}</p>
+        </div>
+        <div class="card-body">
+            <p><strong>Username:</strong> {{ request.user.username }}</p>
+            <p><strong>Email:</strong> {{ request.user.email }}</p>
+            <a href="{% url 'student_profile' %}" class="btn btn-sm btn-outline-dark">⚙️ Update My Profile</a>
+            <a href="{% url 'change_password' %}" class="btn btn-sm btn-outline-danger ms-2">🔐 Change Password</a>
+        </div>
+    </div>
+
+    <!-- DEADLINE REMINDER (Optional) -->
+    {% if site_profile and site_profile.application_deadline %}
+    <div class="alert alert-warning text-center">
+        ⏳ <strong>Note:</strong> Application deadline is
+        <strong>{{ site_profile.application_deadline|date:"d M Y" }}</strong>.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

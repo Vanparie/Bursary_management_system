@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Django stuff
+*.log
+*.pot
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+
+# Environment files
+.env
+.env.*
+
+# VS Code & other editor stuff
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
