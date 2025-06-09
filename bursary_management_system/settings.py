@@ -42,10 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #'bursary',
     'django.contrib.humanize',  # For formatting numbers, e.g. KES 25,000
     'bursary.apps.BursaryConfig',
     'widget_tweaks',
+    'import_export',
 ]
 
 MIDDLEWARE = [

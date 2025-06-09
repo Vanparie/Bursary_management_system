@@ -7,19 +7,29 @@ from django.utils import timezone
 
 from django.contrib.auth.models import User
 
+
 # ✅ County and Constituency should be defined early
 class County(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
+
 
 class Constituency(models.Model):
     name = models.CharField(max_length=100)
     county = models.ForeignKey(County, on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = ('name', 'county')  # Optional: Prevents duplicate constituency names within a county
+        ordering = ['county__name', 'name']   # Optional: Orders nicely in admin
+
     def __str__(self):
         return f"{self.name} - {self.county.name}"
+
     
 
 class Ward(models.Model):
@@ -30,7 +40,11 @@ class Ward(models.Model):
         return f"{self.name} - {self.constituency.name}"
 
 
+def student_profile_pic_path(instance, filename):
+    return f'student_photos/{instance.user.username}/{filename}'
+
 # 👤 Student applying for the bursary
+
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
     full_name = models.CharField(max_length=100)
@@ -38,22 +52,36 @@ class Student(models.Model):
     admission_number = models.CharField(max_length=20, unique=True)
     phone = models.CharField(max_length=15)
     email = models.EmailField(unique=True)
-    institution = models.CharField(max_length=100)
+    institution = models.CharField(max_length=100)  # Renamed from 'school_name' to 'institution' – consistent usage
     course = models.CharField(max_length=100)
     year_of_study = models.CharField(max_length=50)
+    must_change_password = models.BooleanField(default=True)  # New field
+    date_registered = models.DateTimeField(null=True, blank=True)
+    profile_pic = models.ImageField(upload_to=student_profile_pic_path, null=True, blank=True)
+
     category = models.CharField(max_length=50, choices=[
         ('boarding', 'Boarding'),
         ('day', 'Day'),
         ('college', 'College'),
         ('university', 'University'),
     ])
+
     has_disability = models.BooleanField(default=False)
     disability_details = models.TextField(blank=True, null=True)
     previous_bursary = models.BooleanField(default=False)
-    constituency = models.ForeignKey(Constituency, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # ✅ Key field for constituency-specific filtering and import validation
+    constituency = models.ForeignKey(
+        Constituency,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='students'
+    )
 
     def __str__(self):
         return f"{self.full_name} - {self.admission_number}"
+
 
 # 👨‍👩‍👧 Family details
 class Guardian(models.Model):
@@ -154,17 +182,26 @@ class SupportingDocument(models.Model):
 
 class SiteProfile(models.Model):
     county_name = models.CharField(max_length=100)
-    #constituency_name = models.CharField(max_length=100)
+
+    # Supports unique branding and application deadlines per constituency
+    constituency = models.ForeignKey(
+        Constituency,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='site_profiles'
+    )
+
     logo = models.ImageField(upload_to='branding/', null=True, blank=True)
     application_deadline = models.DateField(null=True, blank=True)
-    constituency = models.ForeignKey(Constituency, on_delete=models.SET_NULL, null=True, blank=True)
-
 
     def __str__(self):
         return f"{self.constituency.name if self.constituency else 'No constituency'} - {self.county_name}"
-    
-    
+
     def is_application_open(self):
+        """
+        Determines if the application window is still open based on the deadline.
+        """
         if self.application_deadline:
             return timezone.now().date() <= self.application_deadline
         return True

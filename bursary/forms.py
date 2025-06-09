@@ -9,9 +9,25 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = [
             'full_name', 'id_number', 'admission_number', 'phone', 'email',
-            'institution', 'course', 'year_of_study', 'category',
+            'institution', 'course', 'year_of_study', 'category', 'profile_pic',
             
         ]
+
+    def clean_profile_pic(self):
+        pic = self.cleaned_data.get('profile_pic')
+
+        if pic:
+            # Restrict file size (2MB = 2 * 1024 * 1024 bytes)
+            max_size = 2 * 1024 * 1024
+            if pic.size > max_size:
+                raise ValidationError("Profile picture must be under 2MB.")
+
+            # Restrict file types
+            valid_types = ['image/jpeg', 'image/png']
+            if pic.content_type not in valid_types:
+                raise ValidationError("Only JPEG and PNG images are allowed.")
+
+        return pic
 
 class GuardianForm(forms.ModelForm):
     class Meta:

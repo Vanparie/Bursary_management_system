@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
-from .views import signup_view, StaffLoginView
+from .views import signup_view, StaffLoginView, StudentPasswordChangeView
 
 urlpatterns = [
     path('', views.landing_page, name='landing_page'),
@@ -15,11 +15,13 @@ urlpatterns = [
     path('student/preview/', views.application_preview, name='application_preview'),
     path('student/profile/', views.student_profile_view, name='student_profile'),
     path('student/profile/edit/', views.student_profile_edit, name='student_profile_edit'),
-    path('student/profile/password/', auth_views.PasswordChangeView.as_view(
-        template_name='bursary/password_change.html',
-        success_url='/student/profile/'
-    ), name='change_password'),
+    path('student/profile/password/', StudentPasswordChangeView.as_view(), name='password_change'),
     path('student/download/pdf/', views.application_pdf, name='application_pdf'),
+    path('student/change-password/', views.change_password, name='change_password'),
+    #path('change-password/', views.change_password_from_dashboard, name='change_password_dashboard'),
+    path('student/profile/delete-picture/', views.delete_profile_picture, name='delete_profile_picture'),
+
+
 
     # Officer panel
     #path('officer/login/', views.officer_login_view, name='officer_login'),

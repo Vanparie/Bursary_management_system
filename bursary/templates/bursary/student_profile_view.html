@@ -1,21 +1,56 @@
 {% extends 'bursary/base.html' %}
+{% load static %}
 {% block title %}My Profile{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-  <h3 class="mb-4">👤 My Profile</h3>
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+  <div class="col-md-8">
 
-  <ul class="list-group">
-    <li class="list-group-item"><strong>Full Name:</strong> {{ student.full_name }}</li>
-    <li class="list-group-item"><strong>Admission No:</strong> {{ student.admission_number }}</li>
-    <li class="list-group-item"><strong>Email:</strong> {{ student.email }}</li>
-    <li class="list-group-item"><strong>ID Number:</strong> {{ student.id_number }}</li>
-    <li class="list-group-item"><strong>Phone:</strong> {{ student.phone }}</li>
-    <li class="list-group-item"><strong>Date Registered:</strong> {{ student.date_registered|date:"d M Y" }}</li>
-  </ul>
 
-  <div class="mt-4">
-    <a href="{% url 'student_profile_edit' %}" class="btn btn-warning">✏️ Edit Profile</a>
-    <a href="{% url 'change_password' %}" class="btn btn-secondary ms-2">🔐 Change Password</a>
+    <!-- Profile Picture Section -->
+    <div class="text-center mb-4">
+      {% if student.profile_pic %}
+        <img src="{{ student.profile_pic.url }}" class="rounded-circle" width="150" height="150" alt="Profile Picture">
+        <div>
+          <a href="{% url 'delete_profile_picture' %}" class="btn btn-sm btn-outline-danger">🗑️ Delete Picture</a>
+        </div>
+      {% else %}
+        <img src="{% static 'images/default-avatar.png' %}" class="rounded-circle" width="150" height="150" alt="Default Avatar">
+      {% endif %}
+    </div>
+
+
+    <h3 class="mb-4 text-center">👤 My Profile</h3>
+
+    {% if student.profile_pic %}
+      <div class="text-center mb-4">
+        <img src="{{ student.profile_pic.url }}" alt="Profile Picture" class="img-thumbnail" width="150">
+      </div>
+    {% endif %}
+
+    <ul class="list-group">
+      <li class="list-group-item"><strong>Full Name:</strong> {{ student.full_name }}</li>
+      <li class="list-group-item"><strong>Admission No:</strong> {{ student.admission_number }}</li>
+      <li class="list-group-item"><strong>Email:</strong> {{ student.email }}</li>
+      <li class="list-group-item"><strong>ID Number:</strong> {{ student.id_number }}</li>
+      <li class="list-group-item"><strong>Phone:</strong> {{ student.phone }}</li>
+      <li class="list-group-item"><strong>Date Registered:</strong> {{ student.date_registered|date:"d M Y" }}</li>
+      <li class="list-group-item">
+        <strong>Date Registered:</strong>
+        {% if student.date_registered %}
+          {{ student.date_registered|date:"d M Y" }}
+        {% else %}
+          <em>Not yet recorded</em>
+        {% endif %}
+      </li>
+    </ul>
+
+    <div class="mt-4 text-center">
+      <a href="{% url 'student_profile_edit' %}" class="btn btn-warning">✏️ Edit Profile</a>
+      <a href="{% url 'password_change' %}" class="btn btn-secondary ms-2">🔐 Change Password</a>
+    </div>
   </div>
 </div>
 {% endblock %}
+
+

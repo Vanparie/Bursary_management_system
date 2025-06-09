@@ -36,6 +36,21 @@ from django.forms import modelformset_factory
 
 from django.contrib.sites.shortcuts import get_current_site
 
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+
+
+def home(request):
+    # Fetch the first SiteProfile or adjust based on your specific use case
+    branding = SiteProfile.objects.first()  # Adjust as needed (e.g., filter by county or other criteria)
+
+    # Pass the 'branding' object to the context
+    context = {
+        'branding': branding,
+    }
+    
+    return render(request, 'base.html', context)
+
 
 # ========================
 # Student Bursary Application View
@@ -126,49 +141,57 @@ def apply_bursary(request):
 # ========================
 # Student Signup
 # ========================
+
+# from .forms import StudentSignupForm  # keep this import
+
 def signup_view(request):
-    if request.method == 'POST':
-        form = StudentSignupForm(request.POST)
-        if form.is_valid():
-            user = form.save()
+    # 🚫 Public student registration is disabled
+    messages.warning(request, "Student registration is currently disabled. Please contact the admin.")
+    return redirect('student_login')
 
-            # ✅ Create the StudentProfile
-            profile, created = StudentProfile.objects.get_or_create(user=user)
-            if created:
-                print("✅ StudentProfile created for:", user.username)
-            else:
-                print("ℹ️ StudentProfile already exists for:", user.username)
+# def signup_view(request):
+#     if request.method == 'POST':
+#         form = StudentSignupForm(request.POST)
+#         if form.is_valid():
+#             user = form.save()
 
-            # ✅ Create the Student record (to avoid redirection issues)
-            student, created = Student.objects.get_or_create(
-                user=user,
-                admission_number=user.username,
-                defaults={
-                    'full_name': '',
-                    'id_number': f'DUMMY{user.id}',  # ✅ Prevent duplicate empty id_number
-                    'phone': '',
-                    'email': user.email,
-                    'institution': '',
-                    'course': '',
-                    'year_of_study': '',
-                    'category': 'boarding',
-                    'has_disability': False,
-                    'previous_bursary': False,
-                }
-            )
-            if created:
-                print("✅ Student record created for:", user.username)
-            else:
-                print("ℹ️ Student record already exists for:", user.username)
+#             # ✅ Create the StudentProfile
+#             profile, created = StudentProfile.objects.get_or_create(user=user)
+#             if created:
+#                 print("✅ StudentProfile created for:", user.username)
+#             else:
+#                 print("ℹ️ StudentProfile already exists for:", user.username)
 
-            messages.success(request, "Signup successful. Please log in.")
-            return redirect('student_login')
-        else:
-            messages.error(request, "Please correct the errors below.")
-    else:
-        form = StudentSignupForm()
+#             # ✅ Create the Student record (to avoid redirection issues)
+#             student, created = Student.objects.get_or_create(
+#                 user=user,
+#                 admission_number=user.username,
+#                 defaults={
+#                     'full_name': '',
+#                     'id_number': f'DUMMY{user.id}',  # ✅ Prevent duplicate empty id_number
+#                     'phone': '',
+#                     'email': user.email,
+#                     'institution': '',
+#                     'course': '',
+#                     'year_of_study': '',
+#                     'category': 'boarding',
+#                     'has_disability': False,
+#                     'previous_bursary': False,
+#                 }
+#             )
+#             if created:
+#                 print("✅ Student record created for:", user.username)
+#             else:
+#                 print("ℹ️ Student record already exists for:", user.username)
 
-    return render(request, 'bursary/signup.html', {'form': form})
+#             messages.success(request, "Signup successful. Please log in.")
+#             return redirect('student_login')
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = StudentSignupForm()
+
+#     return render(request, 'bursary/signup.html', {'form': form})
 
 
 
@@ -179,22 +202,28 @@ def student_login_view(request):
 
         if form.is_valid():
             user = form.get_user()
-            login(request, user)
 
-            if not remember:
-                request.session.set_expiry(0)
-
-            # 🚨 Check if StudentProfile exists (not just user)
+            # ✅ Only allow login if user is linked to a StudentProfile
             if StudentProfile.objects.filter(user=user).exists():
+                login(request, user)
+
+                if not remember:
+                    request.session.set_expiry(0)  # Session expires on browser close
+
+                # ✅ Check if student must change password
+                student = Student.objects.filter(user=user).first()
+                if student and student.must_change_password:
+                    return redirect('change_password')  # Redirect to change password
+
                 return redirect('student_dashboard')
 
             elif OfficerProfile.objects.filter(user=user).exists():
-                messages.error(request, "This is not the login page for officers.")
+                messages.error(request, "Officers must use the staff login page.")
                 return redirect('staff_login')
 
             else:
-                messages.error(request, "Profile not found. Please complete your signup.")
-                return redirect('student_signup')
+                messages.error(request, "You are not registered as a student.")
+                return redirect('student_login')  # Stay on login page
 
         else:
             messages.error(request, "Invalid username or password.")
@@ -202,6 +231,31 @@ def student_login_view(request):
         form = AuthenticationForm()
 
     return render(request, 'bursary/login.html', {'form': form})
+
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            # Set must_change_password to False
+            student = Student.objects.get(user=request.user)
+            student.must_change_password = False
+            student.save()
+
+            update_session_auth_hash(request, request.user)
+            # ✅ Set a session flag instead of immediate message
+            request.session['show_password_message'] = True
+
+            return redirect('student_dashboard')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(user=request.user)
+
+    return render(request, 'bursary/change_password.html', {'form': form})
+
 
 
 class StaffLoginView(LoginView):
@@ -289,8 +343,10 @@ def admin_dashboard(request):
 @login_required
 def student_dashboard(request):
     try:
-        student = Student.objects.get(email=request.user.email)
+        # 🔄 Use the user foreign key to fetch the student
+        student = Student.objects.get(user=request.user)
     except Student.DoesNotExist:
+        messages.error(request, "Student profile not found.")
         return redirect('student_signup')  # Or any fallback
 
     # Get the student's bursary application (if any)
@@ -309,10 +365,16 @@ def student_dashboard(request):
     else:
         application_status = 'You have not submitted any bursary application yet.'
 
+    # 🔥 Force message queue to clear any duplicate leftovers
+    #list(messages.get_messages(request))
+    if request.session.pop('show_password_message', False):
+        messages.success(request, 'Password updated successfully.')
+
+
     return render(request, 'bursary/student_dashboard.html', {
         'student': student,
         'application_status': application_status,
-        'application': application,  # Keep existing applications for future references
+        'application': application,
     })
 
 
@@ -322,10 +384,11 @@ def student_dashboard(request):
 # ========================
 @login_required
 def student_profile_view(request):
-    student = Student.objects.filter(admission_number=request.user.username).first()
-    if not student:
-        messages.warning(request, "We couldn’t find your profile info yet. Please apply first.")
-        return redirect('student_dashboard')  # Adjust as needed
+    #student = Student.objects.filter(admission_number=request.user.username).first()
+    student = Student.objects.get(user=request.user)
+    #if not student:
+     #   messages.warning(request, "We couldn’t find your profile info yet. Please apply first.")
+      #  return redirect('student_dashboard')  # Adjust as needed
     return render(request, 'bursary/student_profile_view.html', {'student': student})
 
 # ========================
@@ -668,3 +731,40 @@ def submit_bursary_application(request):
         )
     
     return redirect('student_dashboard')  # Redirect to the dashboard after submission
+
+
+
+from django.contrib.auth.views import PasswordChangeView
+from django.contrib.messages.views import SuccessMessageMixin
+from django.contrib import messages
+from django.urls import reverse_lazy
+
+class StudentPasswordChangeView(SuccessMessageMixin, PasswordChangeView):
+    template_name = 'bursary/password_change.html'
+    success_url = reverse_lazy('student_profile')  # or your actual named URL
+    #success_message = "✅ Your password has been changed successfully."
+
+    def form_valid(self, form):
+        #Clear any existing success messages
+        storage = messages.get_messages(self.request)
+        for _ in storage:
+            pass  # just iterating clears old messages
+
+        messages.success(self.request, "Password updated successfully.")
+        return super().form_valid(form)
+
+
+@login_required
+def delete_profile_picture(request):
+    student = request.user.student
+    if student.profile_pic:
+        student.profile_pic.delete(save=False)
+        student.profile_pic = None
+        student.save()
+        messages.success(request, "Profile picture deleted successfully.")
+    else:
+        messages.info(request, "No profile picture to delete.")
+    return redirect('student_profile')
+
+
+    

@@ -12,7 +12,7 @@
         <img src="{{ site_profile.logo.url }}" alt="Site Logo" class="img-fluid" style="max-width: 150px; margin-bottom: 20px;">
     {% endif %}
 
-    <a href="{% url 'student_signup' %}" class="btn btn-primary btn-lg mt-3">Get Started</a>
+{#    <a href="{% url 'student_signup' %}" class="btn btn-primary btn-lg mt-3">Get Started</a> #}
 </div>
 
 <!-- Deadline Ticker -->
@@ -43,13 +43,15 @@
 <div class="mt-5 p-5 bg-light rounded text-center">
     <h2>How It Works</h2>
     <ol class="list-unstyled">
-        <li>1️⃣ Register an account using your email</li>
+        {# <li>1️⃣ Register an account using your email</li> #}
+        <li>1️⃣ Login using your admission number as both username and password</li>
         <li>2️⃣ Fill in your personal and academic details</li>
         <li>3️⃣ Upload supporting documents</li>
         <li>4️⃣ Submit your application</li>
         <li>5️⃣ Track your application and get updates via SMS</li>
     </ol>
 </div>
+
 
 <div class="text-center mt-5">
     <a href="{% url 'student_login' %}" class="btn btn-outline-dark btn-lg">Already have an account? Login</a>

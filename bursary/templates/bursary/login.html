@@ -26,6 +26,10 @@
         <!-- Password Field -->
         <div class="mb-3">
             {{ form.password.label_tag }} {{ form.password }}
+            <p class="form-text text-muted">
+                🔐 Default password is the same as your <strong>admission number</strong>. 
+                You will be required to change it after logging in.
+            </p>
         </div>
 
         <!-- Remember Me Checkbox -->
@@ -44,4 +48,5 @@
     </form>
 </div>
 {% endblock %}
+
 
