@@ -1,6 +1,6 @@
-# {{ County_name/Constituency_name }}
+# {{ Samburu West NG-CDF Bursary }}
 
-This is a secure, customizable Bursary Management System for {{ County/Constituency }} use.
+This is a secure, customizable Bursary Management System for {{ Samburu West Constituency }} use.
 
 ## Features
 
@@ -36,7 +36,7 @@ This is a secure, customizable Bursary Management System for {{ County/Constitue
 
 ## Configuration (in .env)
 
-## PROJECT_NAME= Site profile County/Constituency Bursary BRANDING_TYPE=county/constituency EMAIL_HOST_USER=you@example.com EMAIL_HOST_PASSWORD=your-app-password
+## PROJECT_NAME= Samburu West NG-CDF Bursary BRANDING_TYPE=samburu west constituency EMAIL_HOST_USER=you@example.com EMAIL_HOST_PASSWORD=your-app-password
 
 
 
