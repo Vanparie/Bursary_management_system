@@ -30,7 +30,12 @@
                 </p>
 
                 <p><strong>Bursary Type:</strong> {{ application.get_bursary_type_display }}</p>
-                <p><strong>Amount Requested:</strong> <span class="text-primary fw-bold">KES {{ application.amount_requested|floatformat:0 }}</span></p>
+                <p><strong>Amount Requested:</strong> KES {{ application.amount_requested|floatformat:0 }}</p>
+                
+                {% if application.amount_awarded %}
+                    <p><strong>Amount Awarded:</strong> <span class="text-primary fw-bold">KES {{ application.amount_awarded|floatformat:0 }}</span></p>
+                {% endif %}
+
                 <p><strong>Feedback:</strong> {{ application.feedback|default:"No feedback yet." }}</p>
 
                 <a href="{% url 'application_preview' %}" class="btn btn-outline-info mt-3">🔍 View Full Application</a>

@@ -1,0 +1,41 @@
+{% extends 'bursary/base.html' %}
+{% block title %}Officer Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>📊 Officer Reports</h2>
+
+  <div class="row my-4">
+    <div class="col-md-4">
+      <div class="card text-bg-primary mb-3">
+        <div class="card-body">
+          <h5>Total Applications</h5>
+          <h3>{{ total_apps }}</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-bg-success mb-3">
+        <div class="card-body">
+          <h5>Amount Requested</h5>
+          <h3>KES {{ total_requested|floatformat:0 }}</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-bg-warning mb-3">
+        <div class="card-body">
+          <h5>Amount Approved</h5>
+          <h3>KES {{ total_approved|floatformat:0 }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <a href="{% url 'export_applications_csv' %}" class="btn btn-outline-primary">⬇️ Export Applications (CSV)</a>
+    <a href="{% url 'export_officer_logs' %}" class="btn btn-outline-secondary">⬇️ Export Logs (CSV)</a>
+  </div>
+
+</div>
+{% endblock %}

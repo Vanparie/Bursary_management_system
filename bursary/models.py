@@ -69,6 +69,7 @@ class Student(models.Model):
     has_disability = models.BooleanField(default=False)
     disability_details = models.TextField(blank=True, null=True)
     previous_bursary = models.BooleanField(default=False)
+    previous_bursary_details = models.TextField(blank=True, null=True)
 
     # ✅ Key field for constituency-specific filtering and import validation
     constituency = models.ForeignKey(
@@ -88,10 +89,10 @@ class Guardian(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     relationship = models.CharField(max_length=50)
-    id_number = models.CharField(max_length=20, blank=True, null=True)
+    guardian_id_number = models.CharField(max_length=20, blank=True, null=True)
     occupation = models.CharField(max_length=100, blank=True, null=True)
     income = models.DecimalField(max_digits=10, decimal_places=2)
-    phone = models.CharField(max_length=15)
+    guardian_phone = models.CharField(max_length=15)
 
     def __str__(self):
         return f"{self.name} ({self.relationship})"
@@ -131,6 +132,7 @@ class BursaryApplication(models.Model):
     fees_required = models.DecimalField(max_digits=10, decimal_places=2)
     fees_paid = models.DecimalField(max_digits=10, decimal_places=2)
     amount_requested = models.DecimalField(max_digits=10, decimal_places=2)
+    amount_awarded = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     supporting_doc = models.FileField(upload_to='uploads/', null=True, blank=True)
 
@@ -161,8 +163,9 @@ class SupportingDocument(models.Model):
     DOCUMENT_TYPES = [
         ('birth_cert', 'Birth Certificate'),
         ('id_copy', 'ID Copy'),
+        ('admission_letter', 'Admission Letter'),
         ('fee_structure', 'Fee Structure'),
-        ('result_slip', 'Result Slip'),
+        ('result_slip', 'KCPE/KCSE/Result Slip'),
         ('death_cert', 'Death Certificate'),
         ('disability_cert', 'Disability Certificate'),
         ('other', 'Other'),
@@ -214,11 +217,38 @@ class OfficerProfile(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    constituency = models.ForeignKey(Constituency, on_delete=models.CASCADE)
+    constituency = models.ForeignKey('Constituency', on_delete=models.CASCADE)
     bursary_type = models.CharField(max_length=20, choices=BURSARY_TYPE_CHOICES, default='constituency')
 
+    # ✅ NEW FIELDS
+    is_active = models.BooleanField(default=True)
+    is_manager = models.BooleanField(default=False)  # Only managers can manage other officers
+    profile_pic = models.ImageField(upload_to='officer_profiles/', blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, help_text="Officer's phone number (optional)")
+    designation = models.CharField(max_length=50, blank=True, help_text="Position e.g. 'Clerk', 'Chairperson', etc.")
+
     def __str__(self):
-        return f"{self.user.username} - {self.constituency.name} ({self.bursary_type})"
+        return f"{self.user.get_full_name() or self.user.username} - {self.constituency.name} [{self.get_bursary_type_display()}]"
+
+
+class OfficerActivityLog(models.Model):
+    ACTION_CHOICES = [
+        ('login', 'Login'),
+        ('add_officer', 'Added Officer'),
+        ('edit_officer', 'Edited Officer'),
+        ('delete_officer', 'Deleted Officer'),
+        ('review_application', 'Reviewed Application'),
+        ('change_status', 'Changed Application Status'),
+    ]
+
+    officer = models.ForeignKey(User, on_delete=models.CASCADE)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    description = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.officer.username} - {self.get_action_display()} at {self.timestamp:%Y-%m-%d %H:%M}"
+
 
 
 class StudentProfile(models.Model):

@@ -1,18 +1,35 @@
 {% extends 'bursary/base.html' %}
 
+{% block title %}Officer Profile{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">My Officer Profile</h2>
-    <div class="card shadow-sm">
+<div class="container my-5">
+    <h2 class="mb-4 text-center fw-bold">👤 My Officer Profile</h2>
+
+    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
         <div class="card-body">
-            <p><strong>Full Name:</strong> {{ officer.user.get_full_name }}</p>
+
+            <!-- ✅ Profile Picture if Available -->
+            {% if officer.profile_pic %}
+                <div class="text-center mb-3">
+                    <img src="{{ officer.profile_pic.url }}" alt="Profile Picture" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
+                </div>
+            {% endif %}
+
+            <h3 class="text-center">{{ officer.user.get_full_name|default:officer.user.username }}</h3>
+
             <p><strong>Email:</strong> {{ officer.user.email }}</p>
             <p><strong>Username:</strong> {{ officer.user.username }}</p>
-            {% if officer.constituency.county %}
-                <p><strong>County:</strong> {{ officer.constituency.county.name }}</p>
-            {% endif %}
+
+            <p><strong>Phone:</strong> {{ officer.phone_number|default:"N/A" }}</p>
+            <p><strong>Designation:</strong> {{ officer.position|default:"Not provided" }}</p>
+
+            <hr>
+            <p><strong>County:</strong> {{ officer.constituency.county.name }}</p>
             <p><strong>Constituency:</strong> {{ officer.constituency.name }}</p>
-            <p><strong>Bursary Type:</strong> {{ officer.bursary_type|capfirst }}</p>
+            <p><strong>Bursary Type:</strong> {{ officer.get_bursary_type_display }}</p>
+
+            <a href="{% url 'officer_dashboard' %}" class="btn btn-outline-primary w-100 mt-3">← Back to Dashboard</a>
         </div>
     </div>
 </div>

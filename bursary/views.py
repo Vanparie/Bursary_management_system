@@ -17,11 +17,11 @@ from xhtml2pdf import pisa
 # Local imports: forms, models, SMS/email utilities
 from .forms import (
     StudentForm, GuardianForm, BursaryApplicationForm,
-    SupportingDocumentForm, UserForm, StudentSignupForm, MinimalStudentSignupForm, SiblingForm
+    SupportingDocumentForm, UserForm, StudentSignupForm, MinimalStudentSignupForm, SiblingForm, OfficerUserForm, OfficerProfileForm
 )
 from .models import (
     Student, Guardian, Sibling, BursaryApplication,
-    SupportingDocument, SiteProfile, OfficerProfile, Constituency, StudentProfile
+    SupportingDocument, SiteProfile, OfficerProfile, Constituency, StudentProfile, Ward, OfficerActivityLog
 )
 from .sms_utils import send_sms
 from .email_utils import send_application_email
@@ -55,53 +55,70 @@ def home(request):
 # ========================
 # Student Bursary Application View
 # ========================
+from django.forms import modelformset_factory
+
 @login_required
 def apply_bursary(request):
     site_profile = SiteProfile.objects.first()
-    application_deadline = None
+    application_deadline = site_profile.application_deadline if site_profile else None
 
-    if site_profile:
-        application_deadline = site_profile.application_deadline
-
-        if not site_profile.is_application_open():
-            return render(request, 'bursary/deadline_closed.html', {
-                'application_deadline': application_deadline
-            })
+    if site_profile and not site_profile.is_application_open():
+        return render(request, 'bursary/deadline_closed.html', {
+            'application_deadline': application_deadline
+        })
 
     student = Student.objects.filter(admission_number=request.user.username).first()
 
-    # 👉 Assign student constituency if not already set
-    if student and not student.constituency:
+    # Assign student constituency if not already set
+    if student and not student.constituency and site_profile:
         student.constituency = site_profile.constituency
         student.save()
 
     if student and BursaryApplication.objects.filter(student=student).exists():
         return render(request, 'bursary/already_applied.html')
 
-    SiblingFormSet = modelformset_factory(Sibling, fields=('name', 'school', 'class_level'), extra=1, can_delete=True)
+    # ✅ Define formsets
+    SiblingFormSet = modelformset_factory(Sibling, fields=('name', 'school', 'class_level'), extra=2, can_delete=True)
+    SupportingDocumentFormSet = modelformset_factory(SupportingDocument, fields=('document_type', 'file'), extra=3, can_delete=True)
 
     if request.method == 'POST':
         student_form = StudentForm(request.POST, instance=student)
         guardian_form = GuardianForm(request.POST)
         application_form = BursaryApplicationForm(request.POST, request.FILES, student=student)
         sibling_formset = SiblingFormSet(request.POST)
-        supporting_document_form = SupportingDocumentForm(request.POST, request.FILES)
+        document_formset = SupportingDocumentFormSet(request.POST, request.FILES, queryset=SupportingDocument.objects.none())
 
-        if all([student_form.is_valid(), application_form.is_valid(), guardian_form.is_valid(), sibling_formset.is_valid()]):
-            student = student_form.save()
+        if all([
+            student_form.is_valid(), application_form.is_valid(), guardian_form.is_valid(),
+            sibling_formset.is_valid(), document_formset.is_valid()
+        ]):
+            student = student_form.save(commit=False)
+            student.has_disability = request.POST.get("has_disability") == "on"
+            student.disability_details = request.POST.get("disability_details", "")
+            student.previous_bursary = request.POST.get("received_bursary_before") == "on"
+            student.previous_bursary_details = request.POST.get("previous_bursary_details", "")
+            student.save()
 
-            guardian = guardian_form.save(commit=False)
-            guardian.student = student
-            guardian.save()
+            # Clear old guardians and siblings
+            #Guardian.objects.filter(student=student).delete()
+            Sibling.objects.filter(student=student).delete()
+
+            Guardian.objects.update_or_create(
+                student=student,
+                defaults={
+                    'name': guardian_form.cleaned_data['name'],
+                    'relationship': guardian_form.cleaned_data['relationship'],
+                    'guardian_id_number': guardian_form.cleaned_data['guardian_id_number'],
+                    'occupation': guardian_form.cleaned_data['occupation'],
+                    'income': guardian_form.cleaned_data['income'],
+                    'guardian_phone': guardian_form.cleaned_data['guardian_phone'],
+                }
+            )
 
             application = application_form.save(commit=False)
             application.student = student
-            application.constituency = student.constituency  # Auto-assign student's constituency
+            application.constituency = student.constituency
             application.bursary_type = 'constituency'
-            application.has_disability = request.POST.get("has_disability") == "on"
-            application.disability_details = request.POST.get("disability_details", "")
-            application.received_bursary_before = request.POST.get("received_bursary_before") == "on"
-            application.previous_bursary_details = request.POST.get("previous_bursary_details", "")
             application.save()
 
             for sibling_form in sibling_formset:
@@ -110,33 +127,35 @@ def apply_bursary(request):
                     sibling.student = student
                     sibling.save()
 
-            for file in request.FILES.getlist('files'):
-                SupportingDocument.objects.create(
-                    application=application,
-                    file=file,
-                    document_type='other'
-                )
-
+            for doc_form in document_formset:
+                if doc_form.cleaned_data and not doc_form.cleaned_data.get('DELETE'):
+                    doc = doc_form.save(commit=False)
+                    doc.application = application
+                    doc.save()
+            
+            #messages.success(request, "✅ Your bursary application has been submitted successfully!")
             send_application_email(student, application)
             send_sms(student.phone, "Your bursary application has been received. You will be notified after review.")
 
-            messages.success(request, "Application submitted successfully!")
             return redirect('application_preview')
+
     else:
         student_form = StudentForm(instance=student)
         guardian_form = GuardianForm()
         application_form = BursaryApplicationForm(student=student)
         sibling_formset = SiblingFormSet(queryset=Sibling.objects.none())
-        supporting_document_form = SupportingDocumentForm()
+        document_formset = SupportingDocumentFormSet(queryset=SupportingDocument.objects.none())
 
     return render(request, 'bursary/apply.html', {
         'student_form': student_form,
         'application_form': application_form,
         'guardian_form': guardian_form,
         'sibling_formset': sibling_formset,
-        'supporting_document_form': supporting_document_form,
+        'document_formset': document_formset,
         'application_deadline': application_deadline,
     })
+
+
 
 # ========================
 # Student Signup
@@ -148,51 +167,6 @@ def signup_view(request):
     # 🚫 Public student registration is disabled
     messages.warning(request, "Student registration is currently disabled. Please contact the admin.")
     return redirect('student_login')
-
-# def signup_view(request):
-#     if request.method == 'POST':
-#         form = StudentSignupForm(request.POST)
-#         if form.is_valid():
-#             user = form.save()
-
-#             # ✅ Create the StudentProfile
-#             profile, created = StudentProfile.objects.get_or_create(user=user)
-#             if created:
-#                 print("✅ StudentProfile created for:", user.username)
-#             else:
-#                 print("ℹ️ StudentProfile already exists for:", user.username)
-
-#             # ✅ Create the Student record (to avoid redirection issues)
-#             student, created = Student.objects.get_or_create(
-#                 user=user,
-#                 admission_number=user.username,
-#                 defaults={
-#                     'full_name': '',
-#                     'id_number': f'DUMMY{user.id}',  # ✅ Prevent duplicate empty id_number
-#                     'phone': '',
-#                     'email': user.email,
-#                     'institution': '',
-#                     'course': '',
-#                     'year_of_study': '',
-#                     'category': 'boarding',
-#                     'has_disability': False,
-#                     'previous_bursary': False,
-#                 }
-#             )
-#             if created:
-#                 print("✅ Student record created for:", user.username)
-#             else:
-#                 print("ℹ️ Student record already exists for:", user.username)
-
-#             messages.success(request, "Signup successful. Please log in.")
-#             return redirect('student_login')
-#         else:
-#             messages.error(request, "Please correct the errors below.")
-#     else:
-#         form = StudentSignupForm()
-
-#     return render(request, 'bursary/signup.html', {'form': form})
-
 
 
 def student_login_view(request):
@@ -264,9 +238,19 @@ class StaffLoginView(LoginView):
 
     def form_valid(self, form):
         user = form.get_user()
+        login(self.request, user)
+        log_officer_action(user, 'login', 'Officer logged in') 
         if not user.is_staff:
             messages.error(self.request, "You are not authorized to log in here.")
             return self.form_invalid(form)
+        return super().form_valid(form)
+
+        if hasattr(user, 'officerprofile') and not user.officerprofile.is_active:
+            logout(self.request)
+            messages.error(self.request, "Your officer account is inactive. Contact administrator.")
+            return redirect('staff_login')
+
+        log_officer_action(user, 'login', 'Officer logged in')
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -289,52 +273,56 @@ def landing_page(request):
 def admin_dashboard(request):
     query = request.GET.get('q', '')
     status_filter = request.GET.get('status', '')
-    constituency_filter = request.GET.get('constituency', '')
+    ward_filter = request.GET.get('ward', '')
 
     applications = BursaryApplication.objects.select_related('student', 'constituency')
-    application_type = 'constituency'
+    application_type = 'constituency'  # or 'county' based on your setup
 
     # Filter applications by officer role
     if request.user.is_superuser:
         applications = applications.filter(bursary_type=application_type)
+        wards = Ward.objects.none()  # Superuser doesn't need ward filter
     else:
         try:
             profile = OfficerProfile.objects.get(user=request.user)
-            applications = applications.filter(
-                bursary_type=profile.bursary_type,
-                constituency=profile.constituency
-            )
+            constituency = profile.constituency
+            applications = applications.filter(bursary_type=profile.bursary_type, constituency=constituency)
             application_type = profile.bursary_type
+
+            # ✅ Get all Wards for the officer’s constituency
+            wards = Ward.objects.filter(constituency=constituency)
+
+            # ✅ Filter by Ward if selected
+            if ward_filter:
+                applications = applications.filter(ward__id=ward_filter)
+
         except OfficerProfile.DoesNotExist:
             messages.error(request, "No Officer Profile found for this user.")
-            return redirect('admin_dashboard')
+            return redirect('landing_page')
 
-    # Filter by status or constituency if selected
-    if constituency_filter:
-        applications = applications.filter(constituency__name=constituency_filter)
+    # ✅ Filter by status if provided
     if status_filter:
         applications = applications.filter(status=status_filter)
 
-    # Compute stats
+    # ✅ Compute summary stats
     total_apps = applications.count()
     total_requested = applications.aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0
-    total_funded = applications.filter(status='approved').aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0
+    #total_awarded = applications.aggregate(Sum('amount_awarded'))['amount_awarded__sum'] or 0
+    total_approved = applications.filter(status='approved').aggregate(Sum('amount_awarded'))['amount_awarded__sum'] or 0
     status_data = {
         'Pending': applications.filter(status='pending').count(),
         'Approved': applications.filter(status='approved').count(),
         'Rejected': applications.filter(status='rejected').count(),
     }
 
-    all_constituencies = Constituency.objects.all()
-
     return render(request, 'bursary/admin_reports.html', {
         'applications': applications,
         'total_apps': total_apps,
         'total_requested': total_requested,
-        'total_funded': total_funded,
+        'total_approved': total_approved,
         'status_data': status_data,
-        'all_constituencies': all_constituencies,
-        'selected_constituency': constituency_filter,
+        'wards': wards,
+        'selected_ward': ward_filter,
         'selected_status': status_filter,
         'application_type': application_type,
     })
@@ -434,7 +422,7 @@ def application_preview(request):
         # Fetch guardian and siblings details
         guardians = Guardian.objects.filter(student=student)  # Multiple guardians
         siblings = Sibling.objects.filter(student=student)
-        documents = SupportingDocument.objects.filter(application=application)
+        supporting_documents = SupportingDocument.objects.filter(application=application)
 
     except BursaryApplication.DoesNotExist:
         # If no application exists, redirect to the application form
@@ -452,7 +440,7 @@ def application_preview(request):
         'application': application,
         'guardians': guardians,  # Pass the list of guardians
         'siblings': siblings,
-        'documents': documents,
+        'supporting_documents': supporting_documents,
     })
 
 
@@ -463,36 +451,45 @@ def application_preview(request):
 # ========================
 @staff_member_required
 def export_applications_csv(request):
-    applications = BursaryApplication.objects.select_related('student')
+    applications = BursaryApplication.objects.select_related('student', 'constituency')
 
-    response = HttpResponse(content_type='text/csv')
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="bursary_applications.csv"'
 
     writer = csv.writer(response)
     writer.writerow([
-        'Full Name', 'Admission No', 'ID No', 'Institution', 'Course',
-        'Fees Required', 'Fees Paid', 'Amount Requested',
-        'Status', 'Phone', 'Email', 'Submission Date'
+        'Full Name', 'Admission No', 'ID No', 'Institution', 'Course', 'Year of Study',
+        'Constituency', 'Fees Required', 'Fees Paid', 'Amount Requested', 'Amount Awarded',
+        'Status', 'Feedback', 'Phone', 'Email', 'Guardian Name', 'Guardian Income', 'Submission Date'
     ])
 
     for app in applications:
-        s = app.student
+        student = app.student
+        guardian = getattr(student, 'guardian', None)
+
         writer.writerow([
-            s.full_name,
-            s.admission_number,
-            s.id_number,
-            s.institution,
-            s.course,
-            app.fees_required,
-            app.fees_paid,
-            app.amount_requested,
+            student.full_name,
+            student.admission_number,
+            student.id_number,
+            student.institution,
+            student.course,
+            student.year_of_study,
+            app.constituency.name if app.constituency else '',
+            app.fees_required or 0,
+            app.fees_paid or 0,
+            app.amount_requested or 0,
+            app.amount_awarded or 0,
             app.status.title(),
-            s.phone,
-            s.email,
+            app.feedback or '',
+            student.phone,
+            student.email,
+            guardian.name if guardian else '',
+            guardian.income if guardian else '',
             app.date_applied.strftime('%Y-%m-%d %H:%M')
         ])
 
     return response
+
 
 # ========================
 # Generate PDF Preview
@@ -521,7 +518,7 @@ def application_pdf(request):
         application = BursaryApplication.objects.get(student=student)
         guardian = Guardian.objects.get(student=student)
         siblings = Sibling.objects.filter(student=student)
-        documents = SupportingDocument.objects.filter(application=application)
+        supporting_documents = SupportingDocument.objects.filter(application=application)
     except:
         return redirect('apply_bursary')
 
@@ -530,7 +527,7 @@ def application_pdf(request):
         'application': application,
         'guardian': guardian,
         'siblings': siblings,
-        'documents': documents,
+        'supporting_documents': supporting_documents,
     })
 
 
@@ -573,7 +570,7 @@ def officer_profile_view(request):
 def application_detail(request, application_id):
     application = get_object_or_404(BursaryApplication, id=application_id)
 
-    # Only allow if this officer is authorized
+    # Authorization check
     try:
         officer = OfficerProfile.objects.get(user=request.user)
         if application.constituency != officer.constituency or application.bursary_type != officer.bursary_type:
@@ -583,9 +580,24 @@ def application_detail(request, application_id):
         messages.error(request, "Access denied.")
         return redirect('login')
 
+    # ✅ Fetch associated guardians
+    guardians = Guardian.objects.filter(student=application.student)
+
+    # ✅ Fetch siblings for completeness
+    siblings = application.student.sibling_set.all()
+
+    # ✅ Fetch supporting documents
+    supporting_documents = application.supportingdocument_set.all()
+    # supporting_documents = SupportingDocument.objects.filter(application=application)
+
+
     return render(request, 'bursary/application_detail.html', {
         'application': application,
+        'guardians': guardians,
+        'siblings': siblings,
+        'supporting_documents': supporting_documents,
     })
+
 
 @require_POST
 @login_required
@@ -597,16 +609,27 @@ def update_application_status(request, application_id):
         messages.error(request, "Invalid status.")
         return redirect('officer_dashboard')
 
-    officer = OfficerProfile.objects.get(user=request.user)
+    try:
+        officer = OfficerProfile.objects.get(user=request.user)
+    except OfficerProfile.DoesNotExist:
+        messages.error(request, "Officer profile not found.")
+        return redirect('officer_dashboard')
+
     if application.constituency != officer.constituency or application.bursary_type != officer.bursary_type:
         messages.error(request, "Not authorized to update this application.")
         return redirect('officer_dashboard')
 
     application.status = new_status
     application.feedback = request.POST.get('feedback', '')
+
+    amount_awarded = request.POST.get('amount_awarded')
+    application.amount_awarded = int(amount_awarded) if amount_awarded else None
+
     application.save()
 
-    messages.success(request, f"Application marked as {new_status}.")
+    log_officer_action(request.user, 'change_status', f"Updated application #{application.id} to {new_status}")
+
+    messages.success(request, f"Application #{application.id} marked as {new_status}.")
     return redirect('officer_dashboard')
 
 
@@ -767,4 +790,201 @@ def delete_profile_picture(request):
     return redirect('student_profile')
 
 
-    
+
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import get_object_or_404
+
+@staff_member_required
+def manage_officers(request):
+    profile = request.user.officerprofile
+    if not profile.is_manager:
+        messages.error(request, "Access denied. Only managers can manage officers.")
+        return redirect('officer_dashboard')
+
+    officers = OfficerProfile.objects.filter(constituency=profile.constituency).select_related('user')
+
+    return render(request, 'bursary/manage_officers.html', {'officers': officers})
+
+from django.contrib.auth.decorators import user_passes_test
+
+def is_senior_officer(user):
+    return user.groups.filter(name='SeniorOfficer').exists() or user.is_superuser
+
+
+@staff_member_required
+#@user_passes_test(is_senior_officer)
+def add_officer(request):
+    profile = request.user.officerprofile
+    if not profile.is_manager:
+        messages.error(request, "Access denied. Only managers can add officers.")
+        return redirect('officer_dashboard')
+
+    if request.method == 'POST':
+        user_form = OfficerUserForm(request.POST)
+        profile_form = OfficerProfileForm(request.POST, request.FILES)
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save(commit=False)
+            user.set_password(user_form.cleaned_data['password'])
+            user.is_staff = True
+            user.save()
+
+            officer_profile = profile_form.save(commit=False)
+            officer_profile.user = user
+            officer_profile.constituency = profile.constituency
+            officer_profile.save()
+
+            log_officer_action(request.user, 'add_officer', f"Added officer account for {user.username}")
+
+            messages.success(request, "Officer added successfully.")
+            return redirect('manage_officers')
+    else:
+        user_form = OfficerUserForm()
+        profile_form = OfficerProfileForm()
+
+    return render(request, 'bursary/add_officer.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+    })
+
+
+@staff_member_required
+def edit_officer(request, officer_id):
+    profile = request.user.officerprofile
+    if not profile.is_manager:
+        messages.error(request, "Access denied.")
+        return redirect('officer_dashboard')
+
+    officer = get_object_or_404(OfficerProfile, id=officer_id, constituency=profile.constituency)
+
+    if request.method == 'POST':
+        user_form = OfficerUserForm(request.POST, instance=officer.user)
+        profile_form = OfficerProfileForm(request.POST, request.FILES, instance=officer)
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save(commit=False)
+            if user_form.cleaned_data['password']:
+                user.set_password(user_form.cleaned_data['password'])
+            user.save()
+            profile_form.save()
+
+            messages.success(request, "Officer updated successfully.")
+            return redirect('manage_officers')
+    else:
+        user_form = OfficerUserForm(instance=officer.user)
+        profile_form = OfficerProfileForm(instance=officer)
+
+    return render(request, 'bursary/edit_officer.html', {'user_form': user_form, 'profile_form': profile_form})
+
+
+@staff_member_required
+def delete_officer(request, officer_id):
+    profile = request.user.officerprofile
+    if not profile.is_manager:
+        messages.error(request, "Access denied.")
+        return redirect('officer_dashboard')
+
+    officer = get_object_or_404(OfficerProfile, id=officer_id, constituency=profile.constituency)
+
+    if request.method == 'POST':
+        officer.user.delete()  # Deletes both User & OfficerProfile due to cascade
+        messages.success(request, "Officer deleted.")
+        return redirect('manage_officers')
+
+    return render(request, 'bursary/confirm_delete.html', {'officer': officer})
+
+
+def log_officer_action(officer, action, description=""):
+    from .models import OfficerActivityLog
+    OfficerActivityLog.objects.create(officer=officer, action=action, description=description)
+
+
+@staff_member_required
+def officer_logs(request):
+    logs = OfficerActivityLog.objects.filter(officer=request.user).order_by('-timestamp')
+    return render(request, 'bursary/officer_logs.html', {'logs': logs})
+
+
+@staff_member_required
+def export_officer_logs(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="officer_logs.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Officer Username', 'Action', 'Description', 'Timestamp'])
+
+    logs = OfficerActivityLog.objects.select_related('officer').order_by('-timestamp')
+    for log in logs:
+        writer.writerow([log.officer.username, log.action, log.description, log.timestamp])
+
+    return response
+
+
+@staff_member_required
+def officer_reports(request):
+    return render(request, 'bursary/officer_reports.html')
+
+
+
+
+
+
+# from django.shortcuts import render, redirect
+# from django.contrib import messages
+# from django.contrib.auth import login
+# from django.contrib.auth.models import User
+# from bursary.models import Student, SiteProfile
+# from bursary.utils import mock_verify_government_id  # Use real API later
+
+
+# def verify_login(request):
+#     site_profile = SiteProfile.objects.first()
+#     current_constituency_name = site_profile.constituency.name if site_profile else None
+
+#     if request.method == "POST":
+#         student_id = request.POST.get("student_id_number")
+#         guardian_id = request.POST.get("guardian_id_number")
+
+#         # ✅ Call mock function with both IDs
+#         verification_data = mock_verify_government_id(student_id, guardian_id)
+
+#         if not verification_data:
+#             messages.error(request, "❌ Invalid student or guardian ID. Please try again.")
+#             return redirect('verify_login')
+
+#         student_data = verification_data.get("student")
+#         guardian_data = verification_data.get("guardian")
+
+#         if not student_data:
+#             messages.error(request, "❌ Student ID not found in national records.")
+#             return redirect('verify_login')
+
+        
+#         if student_data["constituency_name"].strip().lower().replace("_", " ") != current_constituency_name.strip().lower():
+#             messages.error(request, "❌ You are not eligible to apply in this constituency.")
+#             return redirect('verify_login')
+
+
+#         # ✅ Create User if it doesn't exist
+#         user, created = User.objects.get_or_create(username=student_id)
+#         if created:
+#             user.set_unusable_password()
+#             user.save()
+
+#         # ✅ Create Student record if doesn't exist
+#         student, created = Student.objects.get_or_create(
+#             id_number=student_id,
+#             defaults={
+#                 "admission_number": student_id if student_id else generate_random_admission_number(),
+#                 "full_name": student_data["full_name"],
+#                 #"date_of_birth": student_data["dob"],
+#                 "constituency": site_profile.constituency,
+#                 #"guardian_id": guardian_id,
+#                 "user": user
+#             }
+#         )
+
+#         # ✅ Log the user in
+#         login(request, user)
+#         return redirect('student_dashboard')
+
+#     return render(request, 'bursary/verify_login.html')
+

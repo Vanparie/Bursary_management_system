@@ -16,6 +16,9 @@ from decouple import config
 
 from pathlib import Path
 
+from django.contrib.messages import constants as messages
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -97,6 +100,17 @@ DATABASES = {
 # SMS credentials
 AT_USERNAME = config('AT_USERNAME')
 AT_API_KEY = config('AT_API_KEY')
+
+# Message tags
+MESSAGE_TAGS = {
+    messages.DEBUG: 'secondary',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',  # 👈 This maps 'error' → 'danger' (red) for Bootstrap alerts
+}
+
+
 
 # Email Settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

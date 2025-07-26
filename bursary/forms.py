@@ -1,5 +1,5 @@
 from django import forms
-from .models import Student, BursaryApplication, SupportingDocument, Guardian, Sibling, Ward
+from .models import Student, BursaryApplication, SupportingDocument, Guardian, Sibling, Ward, OfficerProfile
 
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -9,7 +9,7 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = [
             'full_name', 'id_number', 'admission_number', 'phone', 'email',
-            'institution', 'course', 'year_of_study', 'category', 'profile_pic',
+            'institution', 'course', 'year_of_study', 'category', #'profile_pic',
             
         ]
 
@@ -32,7 +32,7 @@ class StudentForm(forms.ModelForm):
 class GuardianForm(forms.ModelForm):
     class Meta:
         model = Guardian
-        fields = ['name', 'relationship', 'id_number', 'occupation', 'income', 'phone']
+        fields = ['name', 'relationship', 'guardian_id_number', 'occupation', 'income', 'guardian_phone']
 
 class SiblingForm(forms.ModelForm):
     class Meta:
@@ -48,7 +48,7 @@ class BursaryApplicationForm(forms.ModelForm):
             'fees_required',
             'fees_paid',
             'amount_requested',
-            'supporting_doc',
+            #'supporting_doc',
         ]
 
     def __init__(self, *args, **kwargs):
@@ -171,3 +171,17 @@ class MinimalStudentSignupForm(UserCreationForm):
                 admission_number=admission_number,
             )
         return user
+
+
+
+class OfficerUserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput, required=True, help_text="Set a password for this officer.")
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'password']
+
+class OfficerProfileForm(forms.ModelForm):
+    class Meta:
+        model = OfficerProfile
+        fields = ['bursary_type', 'designation', 'phone', 'profile_pic']

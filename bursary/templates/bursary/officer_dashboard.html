@@ -1,17 +1,32 @@
 {% extends 'bursary/base.html' %}
+{% block title %}Officer Dashboard{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-  <h2>Welcome, {{ request.user.username }}</h2>
-  <h4>Applications in your constituency</h4>
+<div class="container my-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Welcome, {{ request.user.get_full_name|default:request.user.username }}</h2>
+    <div>
+      <a href="{% url 'export_applications_csv' %}" class="btn btn-outline-primary btn-sm me-2">⬇️ Download Applications (CSV)</a>
+      <a href="{% url 'export_officer_logs' %}" class="btn btn-outline-secondary btn-sm">📜 Download Logs (CSV)</a>
+      <a href="{% url 'add_officer' %}" class="btn btn-outline-success btn-sm ms-2">➕ Add Officer</a>
+    </div>
+  </div>
+  <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary mb-3">
+    ⬅️ Back
+  </a>
+
+  <h4>Applications for {{ request.user.officerprofile.constituency.name }}</h4>
 
   {% if applications %}
-    <table class="table table-bordered mt-3">
-      <thead>
+    <table class="table table-bordered table-striped table-hover mt-3 small">
+      <thead class="table-light">
         <tr>
           <th>Student</th>
-          <th>Type</th>
+          <th>Institution</th>
+          <th>Requested</th>
           <th>Status</th>
-          <th>Date</th>
+          <th>Awarded</th>
+          <th>Date Applied</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -19,16 +34,21 @@
         {% for app in applications %}
           <tr>
             <td>{{ app.student.full_name }}</td>
-            <td>{{ app.bursary_type|title }}</td>
-            <td>{{ app.status|title }}</td>
+            <td>{{ app.student.institution }}</td>
+            <td>KES {{ app.amount_requested|floatformat:0 }}</td>
+            <td><span class="badge bg-{{ app.status|yesno:'success,warning,danger' }}">{{ app.status|capfirst }}</span></td>
+            <td>{% if app.amount_awarded %}KES {{ app.amount_awarded|floatformat:0 }}{% else %}—{% endif %}</td>
             <td>{{ app.date_applied|date:"Y-m-d" }}</td>
-            <td><a href="{% url 'application_detail' app.id %}" class="btn btn-primary btn-sm">View</a></td>
+            <td>
+              <a href="{% url 'application_detail' app.id %}" class="btn btn-sm btn-outline-primary">🔎 View</a>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <p>No applications available.</p>
+    <div class="alert alert-info mt-4 text-center">No applications submitted yet for your constituency.</div>
   {% endif %}
 </div>
 {% endblock %}
+

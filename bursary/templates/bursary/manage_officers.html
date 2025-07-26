@@ -1,0 +1,22 @@
+{% extends 'bursary/base.html' %}
+{% block content %}
+<h2>Manage Officers</h2>
+<a href="{% url 'add_officer' %}" class="btn btn-primary my-2">➕ Add New</a>
+<table class="table table-striped table-bordered">
+  <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Manager?</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for officer in officers %}
+    <tr>
+      <td>{{ officer.user.get_full_name }}</td>
+      <td>{{ officer.user.email }}</td>
+      <td>{{ officer.phone }}</td>
+      <td>{% if officer.is_manager %}✅{% else %}❌{% endif %}</td>
+      <td>
+        <a href="{% url 'edit_officer' officer.id %}" class="btn btn-sm btn-warning">Edit</a>
+        <a href="{% url 'delete_officer' officer.id %}" class="btn btn-sm btn-danger">Delete</a>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

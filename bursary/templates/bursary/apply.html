@@ -21,95 +21,78 @@
               <div class="mb-3">
                 <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field|add_class:"form-control" }}
-                {% if field.help_text %}
-                  <div class="form-text">{{ field.help_text }}</div>
-                {% endif %}
-                {% if field.errors %}
-                  <div class="text-danger small">{{ field.errors.0 }}</div>
-                {% endif %}
+                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
               </div>
             {% endfor %}
 
-            <!-- 1.1 Additional Student Details (Disability and Bursary Checkbox) -->
+            <!-- Disability and Previous Bursary -->
             <div class="form-check mb-2">
               <input type="checkbox" class="form-check-input" name="has_disability" id="has_disability">
               <label class="form-check-label" for="has_disability">I have a disability</label>
             </div>
             <div id="disability_details" class="mb-3" style="display: none;">
-              <label class="form-label" for="disability_details_text">Please provide details of your disability:</label>
-              <textarea class="form-control" name="disability_details" id="disability_details_text" rows="3"></textarea>
+              <label class="form-label">Please provide details of your disability:</label>
+              <textarea class="form-control" name="disability_details" rows="3"></textarea>
             </div>
-            <div class="form-check mb-3">
+
+            <div class="form-check mb-2">
               <input type="checkbox" class="form-check-input" name="received_bursary_before" id="received_bursary_before">
               <label class="form-check-label" for="received_bursary_before">I have received a bursary before</label>
             </div>
             <div id="previous_bursary_details" class="mb-3" style="display: none;">
-              <label class="form-label" for="previous_bursary_details_text">Please provide details of the previous bursary received:</label>
-              <textarea class="form-control" name="previous_bursary_details" id="previous_bursary_details_text" rows="3"></textarea>
+              <label class="form-label">Please provide details of the previous bursary received:</label>
+              <textarea class="form-control" name="previous_bursary_details" rows="3"></textarea>
             </div>
 
             <!-- 2. Guardian Info -->
             <h4 class="mt-4">2. Parent/Guardian Information</h4>
             {% for field in guardian_form %}
               <div class="mb-3">
-                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <label class="form-label">{{ field.label }}</label>
                 {{ field|add_class:"form-control" }}
-                {% if field.help_text %}
-                  <div class="form-text">{{ field.help_text }}</div>
-                {% endif %}
-                {% if field.errors %}
-                  <div class="text-danger small">{{ field.errors.0 }}</div>
-                {% endif %}
+                {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
               </div>
             {% endfor %}
 
             <!-- 3. Application Info -->
             <h4 class="mt-4">3. Application Details</h4>
-
-            <!-- Show Constituency as read-only input -->
             <div class="mb-3">
-              <label class="form-label" for="id_constituency">Constituency</label>
-              <input type="text" class="form-control" id="id_constituency" name="constituency" value="{{ student.constituency.name }}" readonly>
+              <label class="form-label">Constituency</label>
+              <input type="text" class="form-control" value="{{ student.constituency.name }}" readonly>
             </div>
-
-            <!-- Other application form fields -->
             {% for field in application_form %}
               {% if field.name != 'constituency' %}
                 <div class="mb-3">
-                  <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  <label class="form-label">{{ field.label }}</label>
                   {{ field|add_class:"form-control" }}
-                  {% if field.help_text %}
-                    <div class="form-text">{{ field.help_text }}</div>
-                  {% endif %}
-                  {% if field.errors %}
-                    <div class="text-danger small">{{ field.errors.0 }}</div>
-                  {% endif %}
+                  {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
                 </div>
               {% endif %}
             {% endfor %}
 
             <!-- 4. Sibling Info -->
             <h4 class="mt-4">4. Siblings in School</h4>
-            <p>You can list any siblings currently in school.</p>
+            <button type="button" class="btn btn-outline-primary mb-3" id="add-sibling-btn">➕ Add Sibling</button>
             {{ sibling_formset.management_form }}
-            {% for form in sibling_formset %}
-              <div class="border p-3 mb-3 rounded shadow-sm bg-light">
-                {% for field in form.visible_fields %}
-                  <div class="mb-2">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field|add_class:"form-control" }}
-                    {% if field.errors %}
-                      <div class="text-danger small">{{ field.errors.0 }}</div>
+            <div id="siblings-container">
+              {% for form in sibling_formset %}
+                <div class="border p-3 mb-3 rounded shadow-sm bg-light sibling-item position-relative">
+                  <button type="button" class="btn-close position-absolute top-0 end-0 m-2" aria-label="Remove" onclick="markForDelete(this)"></button>
+                  {% for field in form.visible_fields %}
+                    {% if field.name != 'DELETE' %}
+                      <div class="mb-2">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                      </div>
                     {% endif %}
-                  </div>
-                {% endfor %}
-                {% if form.can_delete %}
-                  <div class="form-check">
-                    {{ form.DELETE }} <label class="form-check-label">Remove this sibling</label>
-                  </div>
-                {% endif %}
-              </div>
-            {% endfor %}
+                  {% endfor %}
+
+                  {{ form.DELETE|add_class:"d-none" }}
+                </div>
+              {% endfor %}
+            </div>
 
             <!-- 5. Supporting Documents -->
             <h4 class="mt-4">5. Supporting Documents</h4>
@@ -123,11 +106,25 @@
               <li>Disability Certificate (if applicable)</li>
             </ul>
 
-            <div class="mb-3">
-              <label class="form-label">Upload Documents (Multiple):</label>
-              <input type="file" name="files[]" multiple class="form-control" required>
-              <small class="form-text text-muted">Hold Ctrl (or Cmd) to select multiple files.</small>
+            {{ document_formset.management_form }}
+            <div id="documents-container">
+              {% for form in document_formset %}
+                <div class="border p-3 mb-3 rounded shadow-sm bg-light form-item position-relative">
+                  <button type="button" class="btn-close position-absolute top-0 end-0 m-2" aria-label="Remove" onclick="markForDelete(this)"></button>
+                  {% for field in form.visible_fields %}
+                    {% if field.name != 'DELETE' %}
+                      <div class="mb-2">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                  {{ form.DELETE|add_class:"d-none" }}
+                </div>
+              {% endfor %}
             </div>
+            <button type="button" class="btn btn-outline-secondary mb-3" id="add-document-btn">➕ Add Another Document</button>
 
             <!-- Submit Button -->
             <div class="text-center mt-4">
@@ -141,32 +138,70 @@
   </div>
 </div>
 
-<script>
-  function toggleDisabilityDetails() {
-    var disabilityDetails = document.getElementById('disability_details');
-    disabilityDetails.style.display = document.getElementById('has_disability').checked ? 'block' : 'none';
-  }
-
-  function togglePreviousBursaryDetails() {
-    var bursaryDetails = document.getElementById('previous_bursary_details');
-    bursaryDetails.style.display = document.getElementById('received_bursary_before').checked ? 'block' : 'none';
-  }
-
-  document.getElementById('has_disability').addEventListener('change', toggleDisabilityDetails);
-  document.getElementById('received_bursary_before').addEventListener('change', togglePreviousBursaryDetails);
-</script>
-
-<div class="mt-4">
-  {% if application_deadline %}
-    <div class="deadline-ticker-wrapper">
-      <div class="deadline-ticker">
-        ⏳ Deadline: {{ application_deadline|date:"F j, Y" }} – Don’t wait until the last minute!
-      </div>
-    </div>
-  {% endif %}
+<!-- Hidden Templates for JS cloning -->
+<div id="empty-sibling-form" class="d-none">
+  <div class="border p-3 mb-3 rounded shadow-sm bg-light sibling-item position-relative">
+    <button type="button" class="btn-close position-absolute top-0 end-0 m-2" aria-label="Remove" onclick="markForDelete(this)"></button>
+    __FORM__
+  </div>
 </div>
 
+<div id="empty-document-form" class="d-none">
+  <div class="border p-3 mb-3 rounded shadow-sm bg-light form-item position-relative">
+    <button type="button" class="btn-close position-absolute top-0 end-0 m-2" aria-label="Remove" onclick="markForDelete(this)"></button>
+    __FORM__
+  </div>
+</div>
+
+<!-- JS Section -->
+<script>
+  document.getElementById('has_disability').addEventListener('change', function() {
+    document.getElementById('disability_details').style.display = this.checked ? 'block' : 'none';
+  });
+  document.getElementById('received_bursary_before').addEventListener('change', function() {
+    document.getElementById('previous_bursary_details').style.display = this.checked ? 'block' : 'none';
+  });
+
+  function markForDelete(button) {
+    const form = button.closest('.form-item, .sibling-item');
+    form.querySelector('input[type=checkbox][name$="-DELETE"]').checked = true;
+    form.style.display = 'none';
+  }
+
+  // Dynamic siblings addition
+  document.getElementById('add-sibling-btn').addEventListener('click', function () {
+    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+    const newIdx = parseInt(totalForms.value);
+    const template = document.getElementById('empty-sibling-form').innerHTML.replace('__FORM__', sibling_formset_empty_form.replace(/__prefix__/g, newIdx));
+    document.getElementById('siblings-container').insertAdjacentHTML('beforeend', template);
+    totalForms.value = newIdx + 1;
+  });
+
+  // Dynamic supporting documents addition
+  document.getElementById('add-document-btn').addEventListener('click', function () {
+    const totalForms = document.getElementById('id_documents_set-TOTAL_FORMS');
+    const newIdx = parseInt(totalForms.value);
+    const template = document.getElementById('empty-document-form').innerHTML.replace('__FORM__', document_formset_empty_form.replace(/__prefix__/g, newIdx));
+    document.getElementById('documents-container').insertAdjacentHTML('beforeend', template);
+    totalForms.value = newIdx + 1;
+  });
+
+  // Make Django's empty form HTML accessible to JS
+  const sibling_formset_empty_form = `{{ sibling_formset.empty_form.as_p|escapejs }}`;
+  const document_formset_empty_form = `{{ document_formset.empty_form.as_p|escapejs }}`;
+</script>
+
+{% if application_deadline %}
+  <div class="deadline-ticker-wrapper mt-4">
+    <div class="deadline-ticker">
+      ⏳ Deadline: {{ application_deadline|date:"F j, Y" }} – Don’t wait until the last minute!
+    </div>
+  </div>
+{% endif %}
 {% endblock %}
+
+
+
 
 
 

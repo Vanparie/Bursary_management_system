@@ -1,58 +1,84 @@
 {% extends 'bursary/base.html' %}
-{% block title %}Officer Panel{% endblock %}
+{% block title %}Officer Dashboard{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container my-5">
   <h2 class="mb-4">🧑‍💼 Applications - {{ request.user.officerprofile.constituency.name }}</h2>
 
-  <form method="get" class="mb-3">
-    <select name="status" onchange="this.form.submit()" class="form-select w-25">
-      <option value="">All Statuses</option>
-      <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-      <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
-      <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
-    </select>
+  <!-- FILTER FORM -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-auto">
+      <select name="status" onchange="this.form.submit()" class="form-select">
+        <option value="">🔎 Filter by Status</option>
+        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+      </select>
+    </div>
   </form>
 
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>Student</th>
-        <th>Amount</th>
-        <th>Status</th>
-        <th>Feedback</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for app in applications %}
+  <!-- APPLICATIONS TABLE -->
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle">
+      <thead class="table-dark">
         <tr>
-          <td>{{ app.student.full_name }}</td>
-          <td>KES {{ app.amount_requested|floatformat:0 }}</td>
-          <td>{{ app.status|title }}</td>
-          <td>{{ app.feedback|default:"—" }}</td>
-          <td>
-            {% if app.status == 'pending' %}
-              <form method="post" action="{% url 'update_application_status' app.id %}">
-                {% csrf_token %}
-                <div class="input-group">
-                  <select name="status" class="form-select">
-                    <option value="approved">✅ Approve</option>
-                    <option value="rejected">❌ Reject</option>
-                  </select>
-                  <input type="text" name="feedback" class="form-control" placeholder="Optional feedback">
-                  <button class="btn btn-primary">Submit</button>
-                </div>
-              </form>
-            {% else %}
-              —
-            {% endif %}
-          </td>
+          <th>Student</th>
+          <th>Requested (KES)</th>
+          <th>Status</th>
+          <th>Amount Awarded (KES)</th>
+          <th>Feedback</th>
+          <th>Review Action</th>
         </tr>
-      {% empty %}
-        <tr><td colspan="5" class="text-center">No applications found.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+          <tr>
+            <td>{{ app.student.full_name }}</td>
+            <td>{{ app.amount_requested|floatformat:0 }}</td>
+            <td>
+              <span class="badge bg-{{ app.status|yesno:'success,warning,danger' }}">
+                {{ app.status|capfirst }}
+              </span>
+            </td>
+            <td>
+              {% if app.amount_awarded %}
+                <span class="text-success fw-bold">KES {{ app.amount_awarded|floatformat:0 }}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>{{ app.feedback|default:"—" }}</td>
+            <td>
+              {% if app.status == 'pending' %}
+                <form method="post" action="{% url 'update_application_status' app.id %}" class="row g-2">
+                  {% csrf_token %}
+                  <div class="col-auto">
+                    <select name="status" class="form-select form-select-sm">
+                      <option value="approved">✅ Approve</option>
+                      <option value="rejected">❌ Reject</option>
+                    </select>
+                  </div>
+                  <div class="col-auto">
+                    <input type="number" name="amount_awarded" class="form-control form-control-sm" placeholder="KES Amount Awarded" min="0" required>
+                  </div>
+                  <div class="col-auto">
+                    <input type="text" name="feedback" class="form-control form-control-sm" placeholder="Optional feedback">
+                  </div>
+                  <div class="col-auto">
+                    <button class="btn btn-primary btn-sm">Submit</button>
+                  </div>
+                </form>
+              {% else %}
+                <small class="text-muted">—</small>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted">No applications found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}
+

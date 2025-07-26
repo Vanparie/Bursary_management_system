@@ -3,14 +3,13 @@
 <h3>📊 Bursary Admin Dashboard</h3>
 <hr>
 
-<form method="get" class="row g-2 align-items-center mb-4">
-  <div class="col-md-4">
-    <label>Filter by Constituency:</label>
-    <select name="constituency" class="form-select">
-      <option value="">-- All --</option>
-      {% for c in all_constituencies %}
-        <option value="{{ c.name }}" {% if selected_constituency == c.name %}selected{% endif %}>
-          {{ c.name }}
+<form method="get" class="row g-2 mb-3">
+  <div class="col-auto">
+    <select name="ward" class="form-select">
+      <option value="">-- Filter by Ward --</option>
+      {% for ward in wards %}
+        <option value="{{ ward.id }}" {% if selected_ward == ward.id|stringformat:"s" %}selected{% endif %}>
+          {{ ward.name }}
         </option>
       {% endfor %}
     </select>
@@ -52,7 +51,7 @@
     <div class="card bg-light shadow-sm">
       <div class="card-body">
         <h5>Total Approved</h5>
-        <h2>KES {{ total_funded|floatformat:0 }}</h2>
+        <h2>KES {{ total_approved|floatformat:0 }}</h2>
       </div>
     </div>
   </div>

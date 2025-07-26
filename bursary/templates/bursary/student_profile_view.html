@@ -35,14 +35,7 @@
       <li class="list-group-item"><strong>ID Number:</strong> {{ student.id_number }}</li>
       <li class="list-group-item"><strong>Phone:</strong> {{ student.phone }}</li>
       <li class="list-group-item"><strong>Date Registered:</strong> {{ student.date_registered|date:"d M Y" }}</li>
-      <li class="list-group-item">
-        <strong>Date Registered:</strong>
-        {% if student.date_registered %}
-          {{ student.date_registered|date:"d M Y" }}
-        {% else %}
-          <em>Not yet recorded</em>
-        {% endif %}
-      </li>
+      
     </ul>
 
     <div class="mt-4 text-center">

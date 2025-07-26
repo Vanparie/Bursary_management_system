@@ -1,36 +1,168 @@
 {% extends 'bursary/base.html' %}
+
+{% block title %}Application Detail{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-  <h3>Application Details</h3>
+<div class="container my-4">
+  <h2 class="mb-4">📄 Bursary Application Details</h2>
 
-  <p><strong>Student:</strong> {{ application.student.full_name }}</p>
-  <p><strong>Institution:</strong> {{ application.student.institution }}</p>
-  <p><strong>Fees Required:</strong> KES {{ application.fees_required }}</p>
-  <p><strong>Fees Paid:</strong> KES {{ application.fees_paid }}</p>
-  <p><strong>Requested:</strong> KES {{ application.amount_requested }}</p>
-  <p><strong>Status:</strong> {{ application.status }}</p>
+  <!-- 1. Personal Details -->
+<div class="card my-3 shadow-sm">
+  <div class="card-body">
+    <h5 class="mb-3">1️⃣ Personal Details</h5>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item"><strong>Full Name:</strong> {{ application.student.full_name }}</li>
+      <li class="list-group-item"><strong>ID Number:</strong> {{ application.student.id_number }}</li>
+      <li class="list-group-item"><strong>Admission No:</strong> {{ application.student.admission_number }}</li>
+      <li class="list-group-item"><strong>Institution:</strong> {{ application.student.institution }}</li>
+      <li class="list-group-item"><strong>Course:</strong> {{ application.student.course }}</li>
+      <li class="list-group-item"><strong>Year of Study:</strong> {{ application.student.year_of_study }}</li>
+      <li class="list-group-item"><strong>Category:</strong> {{ application.student.get_category_display }}</li>
+      <li class="list-group-item"><strong>Phone:</strong> {{ application.student.phone }}</li>
+      <li class="list-group-item"><strong>Email:</strong> {{ application.student.email }}</li>
+      <li class="list-group-item"><strong>Constituency:</strong> {{ application.constituency.name }}</li>
+      <li class="list-group-item"><strong>Ward:</strong> {{ application.ward|default:"—" }}</li>
 
-  {% if application.supporting_doc %}
-    <p><strong>Document:</strong> <a href="{{ application.supporting_doc.url }}" target="_blank">View</a></p>
+      <li class="list-group-item"><strong>Disability:</strong> {{ application.student.has_disability|yesno:"Yes,No" }}</li>
+      {% if application.student.has_disability %}
+        <li class="list-group-item"><strong>Disability Details:</strong> {{ application.student.disability_details }}</li>
+      {% endif %}
+
+      <li class="list-group-item"><strong>Received Bursary Before:</strong> {{ application.student.previous_bursary|yesno:"Yes,No" }}</li>
+      {% if application.student.previous_bursary %}
+        <li class="list-group-item"><strong>Previous Bursary Details:</strong> {{ application.student.previous_bursary_details }}</li>
+      {% endif %}
+
+      
+    </ul>
+  </div>
+</div>
+
+
+  <!-- 2️⃣ Parent/Guardian Information -->
+<div class="card my-3 shadow-sm">
+  <div class="card-body">
+    <h5 class="mb-3">2️⃣ Parent/Guardian Information</h5>
+
+    {% if guardians %}
+      {% for guardian in guardians %}
+        <ul class="list-group list-group-flush mb-3">
+          <li class="list-group-item"><strong>Name:</strong> {{ guardian.name }}</li>
+          <li class="list-group-item"><strong>Relationship:</strong> {{ guardian.relationship }}</li>
+          <li class="list-group-item"><strong>ID Number:</strong> {{ guardian.guardian_id_number }}</li>
+          <li class="list-group-item"><strong>Occupation:</strong> {{ guardian.occupation }}</li>
+          <li class="list-group-item"><strong>Income (KES):</strong> {{ guardian.income }}</li>
+          <li class="list-group-item"><strong>Phone:</strong> {{ guardian.guardian_phone }}</li>
+        </ul>
+      {% endfor %}
+    {% else %}
+      <p class="text-muted">No guardian information provided.</p>
+    {% endif %}
+  </div>
+</div>
+
+
+  <!-- 3. Application Info -->
+  <div class="card my-3 shadow-sm">
+    <div class="card-body">
+      <h5 class="mb-3">3️⃣ Application Details</h5>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item"><strong>Fees Required:</strong> KES {{ application.fees_required|floatformat:0 }}</li>
+        <li class="list-group-item"><strong>Fees Paid:</strong> KES {{ application.fees_paid|floatformat:0 }}</li>
+        <li class="list-group-item"><strong>Amount Requested:</strong> KES {{ application.amount_requested|floatformat:0 }}</li>
+        <li class="list-group-item"><strong>Status:</strong> {{ application.status|capfirst }}</li>
+        <li class="list-group-item"><strong>Amount Awarded:</strong> 
+          {% if application.amount_awarded %}
+            KES {{ application.amount_awarded|floatformat:0 }}
+          {% else %}
+            <em>Not yet awarded</em>
+          {% endif %}
+        </li>
+        <li class="list-group-item"><strong>Feedback:</strong> {{ application.feedback|default:"—" }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 4. Siblings -->
+  <div class="card my-3 shadow-sm">
+    <div class="card-body">
+      <h5 class="mb-3">4️⃣ Siblings in School</h5>
+      
+        {% if siblings %}
+          <table class="table table-sm table-bordered">
+            <thead>
+              <tr><th>Name</th><th>School</th><th>Class Level</th></tr>
+            </thead>
+            <tbody>
+              {% for sibling in siblings %}
+                <tr>
+                  <td>{{ sibling.name }}</td>
+                  <td>{{ sibling.school }}</td>
+                  <td>{{ sibling.class_level }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No siblings listed.</p>
+        {% endif %}
+      
+    </div>
+  </div>
+
+  <!-- 5️⃣ Supporting Documents -->
+<div class="card my-3 shadow-sm">
+  <div class="card-body">
+    <h5 class="mb-3">5️⃣ Supporting Documents</h5>
+    {% if supporting_documents %}
+      <ul class="list-group">
+        {% for doc in supporting_documents %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ doc.get_document_type_display }}</span>
+            <div class="btn-group" role="group">
+              <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">👁 View</a>
+              <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" download>⬇ Download</a>
+            </div>
+          </li>
+
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No supporting documents uploaded.</p>
+    {% endif %}
+  </div>
+</div>
+
+
+  <!-- Decision Form (Approve/Reject) -->
+  {% if application.status == 'pending' %}
+  <div class="card shadow-sm my-4">
+    <div class="card-body">
+      <h5 class="mb-3">🎯 Make Decision</h5>
+      <form method="post" action="{% url 'update_application_status' application.id %}">
+        {% csrf_token %}
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <select name="status" class="form-select" required>
+              <option value="">Select Decision</option>
+              <option value="approved">✅ Approve</option>
+              <option value="rejected">❌ Reject</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <input type="number" name="amount_awarded" class="form-control" placeholder="Amount Awarded (KES)">
+          </div>
+        </div>
+        <textarea name="feedback" class="form-control mb-3" placeholder="Optional feedback..." rows="3"></textarea>
+        <button class="btn btn-success">Submit Decision</button>
+        <a href="{% url 'officer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
+      </form>
+    </div>
+  </div>
   {% endif %}
 
-  <form method="POST" action="{% url 'update_application_status' application.id %}">
-    {% csrf_token %}
-    <div class="form-group mt-3">
-      <label>Change Status:</label><br>
-      <select name="status" class="form-control w-25" required>
-        <option value="">--Select--</option>
-        <option value="approved">Approve</option>
-        <option value="rejected">Reject</option>
-      </select>
-    </div>
-    <div class="form-group mt-3">
-      <label>Feedback (optional):</label>
-      <textarea name="feedback" class="form-control" rows="3"></textarea>
-    </div>
-    <button type="submit" class="btn btn-success mt-2">Submit Decision</button>
-  </form>
-
-  <a href="{% url 'officer_dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+  <div class="text-center mt-4">
+    <a href="{% url 'officer_dashboard' %}" class="btn btn-outline-secondary">⬅️ Back to Dashboard</a>
+  </div>
 </div>
 {% endblock %}

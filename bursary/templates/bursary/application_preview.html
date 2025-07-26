@@ -9,7 +9,7 @@
     {% for message in messages %}
       <div class="alert alert-success alert-dismissible fade show" role="alert">
         {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     {% endfor %}
   {% endif %}
@@ -37,7 +37,8 @@
       {% for guardian in guardians %}
         <li>
           <strong>Name:</strong> {{ guardian.name }} ({{ guardian.relationship }})<br>
-          <strong>Phone:</strong> {{ guardian.phone }}<br>
+          <strong>ID:</strong> {{ guardian.guardian_id_number }}<br>
+          <strong>Phone:</strong> {{ guardian.guardian_phone }}<br>
           <strong>Occupation:</strong> {{ guardian.occupation }}<br>
           <strong>Income:</strong> KES {{ guardian.income|floatformat:0 }}
         </li>
@@ -53,7 +54,8 @@
   <ul class="list-unstyled">
     <li><strong>Fees Required:</strong> KES {{ application.fees_required }}</li>
     <li><strong>Fees Paid:</strong> KES {{ application.fees_paid }}</li>
-    <li><strong>Amount Requested:</strong> <strong class="text-primary">KES {{ application.amount_requested }}</strong></li>
+    <li><strong>Amount Requested:</strong> KES {{ application.amount_requested }}</li>
+    <p><strong>Amount Awarded:</strong> <strong class="text-primary">KES {{ application.amount_awarded }}</strong></li>
     <li><strong>Status:</strong> 
       <span class="badge 
         {% if application.status == 'approved' %}bg-success
@@ -81,9 +83,9 @@
 
   <!-- Documents Section -->
   <h5 class="mt-4">5. Uploaded Documents</h5>
-  {% if documents %}
+  {% if supporting_documents %}
     <ul class="list-unstyled">
-      {% for doc in documents %}
+      {% for doc in supporting_documents %}
         <li><strong>{{ doc.get_document_type_display }}:</strong>
             <a href="{{ doc.file.url }}" target="_blank">📎 View</a></li>
       {% endfor %}

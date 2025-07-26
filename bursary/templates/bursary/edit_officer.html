@@ -1,0 +1,22 @@
+{% extends 'bursary/base.html' %}
+
+{% block title %}Edit Officer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">✏️ Edit Officer Details</h2>
+
+  <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
+    {% csrf_token %}
+
+    <h5>Account Details</h5>
+    {{ user_form.as_p }}
+
+    <h5 class="mt-4">Officer Profile</h5>
+    {{ profile_form.as_p }}
+
+    <button type="submit" class="btn btn-success mt-3">Save Changes</button>
+    <a href="{% url 'manage_officers' %}" class="btn btn-secondary mt-3 ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}
