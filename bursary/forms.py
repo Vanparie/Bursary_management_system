@@ -159,12 +159,10 @@ class SupportingDocumentForm(forms.ModelForm):
 
 import uuid
 
-
 IDENTIFICATION_CHOICES = [
     ("id", "National ID"),
     ("nemis", "NEMIS"),
 ]
-
 
 class VerifiedStudentSignupForm(forms.ModelForm):
     first_name = forms.CharField(required=True)
@@ -186,6 +184,15 @@ class VerifiedStudentSignupForm(forms.ModelForm):
 
     password1 = forms.CharField(widget=forms.PasswordInput, label="Password")
     password2 = forms.CharField(widget=forms.PasswordInput, label="Password confirmation")
+
+    # ✅ New field: Must agree to terms
+    agree_to_terms = forms.BooleanField(
+        label="I agree to the Terms of Use and Privacy Policy",
+        required=True,
+        error_messages={
+            "required": "You must agree to the Terms of Use and Privacy Policy to register."
+        }
+    )
 
     class Meta:
         model = Student
@@ -224,6 +231,10 @@ class VerifiedStudentSignupForm(forms.ModelForm):
         if pw1 and pw2 and pw1 != pw2:
             raise ValidationError("Passwords do not match.")
 
+        # Ensure agree_to_terms is checked
+        if not cleaned_data.get("agree_to_terms"):
+            raise ValidationError("You must agree to the Terms of Use and Privacy Policy to register.")
+
         # Get site context
         site = SiteProfile.objects.filter(is_active=True).first()
         county = getattr(site, "county", None)
@@ -257,8 +268,7 @@ class VerifiedStudentSignupForm(forms.ModelForm):
             raise ValidationError(message)
 
         return cleaned_data
-    
-    
+
     def save(self, commit=True):
         cleaned_data = self.cleaned_data
 
@@ -309,6 +319,7 @@ class VerifiedStudentSignupForm(forms.ModelForm):
             student.save()
 
         return student
+
 
 
 # ========================
