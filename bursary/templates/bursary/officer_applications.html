@@ -1,0 +1,106 @@
+{% extends 'bursary/officer_base.html' %}
+{% block title %}Officer Applications{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="fw-bold mb-3">📂 Applications</h2>
+
+    <!-- Search + Filters -->
+    <form method="get" class="row g-2 align-items-center mb-3">
+        <div class="col-md-4">
+            <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="🔍 Search by name, adm no...">
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>Pending</option>
+                <option value="approved" {% if selected_status == "approved" %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if selected_status == "rejected" %}selected{% endif %}>Rejected</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="ward" class="form-select">
+                <option value="">All Wards</option>
+                {% for ward in wards %}
+                    <option value="{{ ward.id }}" {% if ward.id|stringformat:"s" == selected_ward %}selected{% endif %}>
+                        {{ ward.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+
+    <!-- Applications Table -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Applications List</h5>
+            <a href="{% url 'export_applications_csv' %}" class="btn btn-sm btn-outline-success">⬇️ Download All</a>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Student</th>
+                        <th>Admission No</th>
+                        <th>Course</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr>
+                        <td>{{ app.student.full_name }}</td>
+                        <td>{{ app.student.admission_number }}</td>
+                        <td>{{ app.student.course }}</td>
+                        <td>
+                            {% if app.status == "pending" %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif app.status == "approved" %}
+                                <span class="badge bg-success">Approved</span>
+                            {% else %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Action Buttons -->
+                            <a href="{% url 'application_detail' app.id %}" class="btn btn-sm btn-outline-primary">👁️</a>
+                            <a href="{% url 'export_applications_csv' %}" class="btn btn-sm btn-outline-secondary">⬇️</a>
+                            
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No applications found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if applications.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ applications.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_ward %}&ward={{ selected_ward }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active"><span class="page-link">{{ applications.number }}</span></li>
+
+            {% if applications.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ applications.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_ward %}&ward={{ selected_ward }}{% endif %}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}
+
+

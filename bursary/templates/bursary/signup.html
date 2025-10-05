@@ -3,58 +3,193 @@
 {% load widget_tweaks %}
 
 {% block content %}
-{# 
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="col-md-6">
+<div class="container col-md-6 offset-md-3 mt-5">
+    <h2 class="text-center mb-4">Student Signup</h2>
 
-        <h2 class="mb-4 text-center">Student Signup</h2>
+    <form method="post" id="signupForm" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
 
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        <!-- First name -->
+        <div class="mb-3">
+            {{ form.first_name.label_tag }}
+            {% render_field form.first_name class="form-control" %}
+            <div class="text-danger">{{ form.first_name.errors }}</div>
+        </div>
+
+        <!-- Middle name -->
+        <div class="mb-3">
+            {{ form.middle_name.label_tag }}
+            {% render_field form.middle_name class="form-control" %}
+            <div class="text-danger">{{ form.middle_name.errors }}</div>
+        </div>
+
+        <!-- Last name -->
+        <div class="mb-3">
+            {{ form.last_name.label_tag }}
+            {% render_field form.last_name class="form-control" %}
+            <div class="text-danger">{{ form.last_name.errors }}</div>
+        </div>
+
+        <!-- Admission number -->
+        <div class="mb-3">
+            {{ form.admission_number.label_tag }}
+            {% render_field form.admission_number class="form-control" %}
+            <div class="text-danger">{{ form.admission_number.errors }}</div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+            {{ form.email.label_tag }}
+            {% render_field form.email class="form-control" %}
+            <div class="text-danger">{{ form.email.errors }}</div>
+        </div>
+
+        <!-- ID type -->
+        <div class="mb-3">
+            <label class="form-label">Choose your Identification</label>
+            {% for radio in form.id_type %}
+                <div class="form-check form-check-inline">
+                    {{ radio.tag }} {{ radio.choice_label }}
+                </div>
             {% endfor %}
-        {% endif %}
+            <div class="text-danger">{{ form.id_type.errors }}</div>
+        </div>
 
-        <form method="post" novalidate>
-            {% csrf_token %}
+        <!-- National ID -->
+        <div class="mb-3" id="idSection">
+            {{ form.id_number.label_tag }}
+            {% render_field form.id_number class="form-control" %}
+            <div id="idFeedback" class="form-text text-danger">{{ form.id_number.errors }}</div>
+        </div>
 
-            <div class="mb-3">
-                {{ form.username.label_tag }}
-                {% render_field form.username class="form-control" %}
-                <div class="text-danger">{{ form.username.errors }}</div>
-            </div>
+        <!-- NEMIS -->
+        <div class="mb-3" id="nemisSection" style="display:none;">
+            {{ form.nemis_number.label_tag }}
+            {% render_field form.nemis_number class="form-control" %}
+            <div class="text-danger">{{ form.nemis_number.errors }}</div>
 
-            <div class="mb-3">
-                {{ form.email.label_tag }}
-                {% render_field form.email class="form-control" %}
-                <div class="text-danger">{{ form.email.errors }}</div>
-            </div>
+            {{ form.guardian_id_number.label_tag }}
+            {% render_field form.guardian_id_number class="form-control" %}
+            <div class="text-danger">{{ form.guardian_id_number.errors }}</div>
+            <div id="nemisFeedback" class="form-text text-danger"></div>
+        </div>
 
-            <div class="mb-3">
-                {{ form.password1.label_tag }}
-                {% render_field form.password1 class="form-control" %}
-                {% if form.password1.help_text %}
-                    <div class="form-text">{{ form.password1.help_text|safe }}</div>
-                {% endif %}
-                <div class="text-danger">{{ form.password1.errors }}</div>
-            </div>
+        <!-- Passwords -->
+        <div class="mb-3">
+            {{ form.password1.label_tag }}
+            {% render_field form.password1 class="form-control" %}
+            <div class="text-danger">{{ form.password1.errors }}</div>
+        </div>
 
-            <div class="mb-3">
-                {{ form.password2.label_tag }}
-                {% render_field form.password2 class="form-control" %}
-                <div class="text-danger">{{ form.password2.errors }}</div>
-            </div>
+        <div class="mb-3">
+            {{ form.password2.label_tag }}
+            {% render_field form.password2 class="form-control" %}
+            <div class="text-danger">{{ form.password2.errors }}</div>
+        </div>
 
-            <button type="submit" class="btn btn-primary w-100">Sign Up</button>
-        </form>
+        <!-- Terms and Privacy Agreement -->
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+            <label class="form-check-label" for="agreeTerms">
+                I agree to the <a href="{% url 'terms' %}" target="_blank">Terms of Use</a> and 
+                <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a>.
+            </label>
+        </div>
 
-        <p class="mt-3 text-center">
-            Already have an account? <a href="{% url 'student_login' %}">Log in here</a>.
-        </p>
-    </div>
+
+        <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+        <p class="mt-3 text-center">Already have an account? <a href="{% url 'student_login' %}">Login</a></p>
+    </form>
 </div>
-#}
+
+<script>
+/* JS stays same — handles toggling and verification */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i=0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+document.addEventListener('DOMContentLoaded', function() {
+    const idTypeRadios = document.querySelectorAll('input[name="id_type"]');
+    const idSection = document.getElementById('idSection');
+    const nemisSection = document.getElementById('nemisSection');
+
+    function toggleSections() {
+        const checked = document.querySelector('input[name="id_type"]:checked');
+        if (!checked) return;
+        if (checked.value === 'id') {
+            idSection.style.display = '';
+            nemisSection.style.display = 'none';
+        } else {
+            idSection.style.display = 'none';
+            nemisSection.style.display = '';
+        }
+    }
+    idTypeRadios.forEach(r => r.addEventListener('change', toggleSections));
+    toggleSections();
+
+    const idInput = document.querySelector('input[name="id_number"]');
+    const nemisInput = document.querySelector('input[name="nemis_number"]');
+    const guardianInput = document.querySelector('input[name="guardian_id_number"]');
+
+    function ajaxVerify(payload, callback) {
+        fetch("{% url 'verify_identity_ajax' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams(payload)
+        }).then(res => res.json())
+          .then(data => callback(null, data))
+          .catch(err => callback(err));
+    }
+
+    if (idInput) {
+        idInput.addEventListener('blur', function() {
+            const payload = { id_type: 'id', id_number: idInput.value };
+            ajaxVerify(payload, function(err, data) {
+                const fb = document.getElementById('idFeedback');
+                if (err) { fb.textContent = 'Verification failed (network).'; return; }
+                fb.textContent = data.message || '';
+                fb.style.color = data.valid ? 'green' : 'red';
+            });
+        });
+    }
+
+    if (nemisInput) {
+        nemisInput.addEventListener('blur', function() {
+            const payload = {
+                id_type: 'nemis',
+                nemis_number: nemisInput.value,
+                guardian_id_number: guardianInput ? guardianInput.value : ''
+            };
+            ajaxVerify(payload, function(err, data) {
+                const fb = document.getElementById('nemisFeedback');
+                if (err) { fb.textContent = 'Verification failed (network).'; return; }
+                fb.textContent = data.message || '';
+                fb.style.color = data.valid ? 'green' : 'red';
+            });
+        });
+    }
+});
+</script>
 {% endblock %}
+
+
+
 
 
 

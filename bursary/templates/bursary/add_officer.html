@@ -1,22 +1,126 @@
-{% extends 'bursary/base.html' %}
-
-{% block title %}Add New Officer{% endblock %}
-
+{% extends "bursary/officer_base.html" %}
 {% block content %}
 <div class="container mt-4">
-  <h2 class="mb-4">➕ Add New Officer</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h4 class="mb-4"><i class="bi bi-person-plus"></i> Add New Officer</h4>
 
-  <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
-    {% csrf_token %}
+            <!-- Flash Messages -->
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} fade-message">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            {% endif %}
 
-    <h5>Account Details</h5>
-    {{ user_form.as_p }}
+            <!-- Non-field Errors -->
+            {% if user_form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ user_form.non_field_errors }}
+              </div>
+            {% endif %}
+            {% if profile_form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ profile_form.non_field_errors }}
+              </div>
+            {% endif %}
 
-    <h5 class="mt-4">Officer Profile</h5>
-    {{ profile_form.as_p }}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
 
-    <button type="submit" class="btn btn-primary mt-3">Add Officer</button>
-    <a href="{% url 'manage_officers' %}" class="btn btn-secondary mt-3 ms-2">Cancel</a>
-  </form>
+                <!-- Account Details -->
+                <h5 class="mb-3">Account Details</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Officer ID</label>
+                        {{ user_form.username }}
+                        {% if user_form.username.errors %}
+                          <div class="text-danger small">{{ user_form.username.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        {{ user_form.email }}
+                        {% if user_form.email.errors %}
+                          <div class="text-danger small">{{ user_form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        {{ user_form.first_name }}
+                        {% if user_form.first_name.errors %}
+                          <div class="text-danger small">{{ user_form.first_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name</label>
+                        {{ user_form.last_name }}
+                        {% if user_form.last_name.errors %}
+                          <div class="text-danger small">{{ user_form.last_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    {{ user_form.password }}
+                    {% if user_form.password.errors %}
+                      <div class="text-danger small">{{ user_form.password.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <!-- Officer Profile -->
+                <h5 class="mb-3">Officer Profile</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label">Designation</label>
+                    {{ profile_form.designation }}
+                    {% if profile_form.designation.errors %}
+                      <div class="text-danger small">{{ profile_form.designation.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Phone</label>
+                    {{ profile_form.phone }}
+                    {% if profile_form.phone.errors %}
+                      <div class="text-danger small">{{ profile_form.phone.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Profile Picture</label>
+                    {{ profile_form.profile_pic }}
+                    {% if profile_form.profile_pic.errors %}
+                      <div class="text-danger small">{{ profile_form.profile_pic.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save Officer
+                </button>
+                <a href="{% url 'manage_officers' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
 </div>
+
+<!-- Auto-hide flash messages -->
+<script>
+  setTimeout(function() {
+    let messages = document.querySelectorAll('.fade-message');
+    messages.forEach(function(msg) {
+      msg.style.transition = "opacity 0.5s ease";
+      msg.style.opacity = "0";
+      setTimeout(() => msg.remove(), 500);
+    });
+  }, 5000); // hide after 5 seconds
+</script>
 {% endblock %}
+
+
+
+
+

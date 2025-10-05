@@ -1,13 +1,32 @@
 import os
+from django.conf import settings
 from django.core.exceptions import ValidationError
 
+# Allowed file extensions (simple whitelist)
+ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png']
+
+
 def validate_file_extension(value):
-    ext = os.path.splitext(value.name)[1].lower()  # Get file extension
-    allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
-    if ext not in allowed_extensions:
-        raise ValidationError(f"Unsupported file type: {ext}. Allowed: PDF, JPG, PNG.")
+    """
+    Validate file extension against allowed list.
+    """
+    ext = os.path.splitext(value.name)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise ValidationError(
+            f"Unsupported file type: {ext}. Allowed types are: PDF, JPG, JPEG, PNG."
+        )
+
 
 def validate_file_size(value):
-    max_size = 2 * 1024 * 1024  # 2MB
+    """
+    Enforce maximum file size.
+    Default: 2 MB unless overridden in settings.py with MAX_UPLOAD_SIZE.
+    """
+    max_size = getattr(settings, "MAX_UPLOAD_SIZE", 2 * 1024 * 1024)  # 2 MB default
     if value.size > max_size:
-        raise ValidationError("File size exceeds 2MB limit.")
+        max_mb = max_size // (1024 * 1024)
+        raise ValidationError(
+            f"File size exceeds the {max_mb} MB limit."
+        )
+
+

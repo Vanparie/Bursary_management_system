@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="container mt-4">
-
   {% if messages %}
     {% for message in messages %}
       <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -14,92 +13,165 @@
     {% endfor %}
   {% endif %}
 
-  <h3 class="mb-3">📄 Bursary Application Preview</h3>
-  <hr>
+  <h3 class="mb-4 text-center">📄 Bursary Application Preview</h3>
 
-  <!-- Student Details -->
-  <h5 class="mt-4">1. Student Details</h5>
-  <ul class="list-unstyled">
-    <li><strong>Name:</strong> {{ student.full_name|default:"-" }}</li>
-    <li><strong>Admission No:</strong> {{ student.admission_number }}</li>
-    <li><strong>ID No:</strong> {{ student.id_number }}</li>
-    <li><strong>Institution:</strong> {{ student.institution }}</li>
-    <li><strong>Course:</strong> {{ student.course }}</li>
-    <li><strong>Year:</strong> {{ student.year_of_study }}</li>
-    <li><strong>Category:</strong> {{ student.category }}</li>
-    <li><strong>Phone:</strong> {{ student.phone }}</li>
-  </ul>
+  <div class="row">
+    <!-- Sidebar (desktop) / Collapsible Navbar (mobile) -->
+    <nav id="sidebarMenu" class="col-md-3 mb-4 d-md-block">
+      <div class="card shadow-sm sticky-top d-none d-md-block" style="top: 90px;">
+        <div class="card-header fw-bold">Quick Navigation</div>
+        <ul class="list-group list-group-flush" id="previewNav">
+          <li class="list-group-item"><a class="nav-link" href="#student-details">👩‍🎓 Student Details</a></li>
+          <li class="list-group-item"><a class="nav-link" href="#guardian-info">👨‍👩‍👦 Guardian Info</a></li>
+          <li class="list-group-item"><a class="nav-link" href="#application-details">📝 Application</a></li>
+          <li class="list-group-item"><a class="nav-link" href="#siblings">👦 Siblings</a></li>
+          <li class="list-group-item"><a class="nav-link" href="#documents">📂 Documents</a></li>
+        </ul>
+      </div>
+    </nav>
 
-  <!-- Guardian Info -->
-  <h5 class="mt-4">2. Guardian Information</h5>
-  {% if guardians %}
-    <ul class="list-unstyled">
-      {% for guardian in guardians %}
-        <li>
-          <strong>Name:</strong> {{ guardian.name }} ({{ guardian.relationship }})<br>
-          <strong>ID:</strong> {{ guardian.guardian_id_number }}<br>
-          <strong>Phone:</strong> {{ guardian.guardian_phone }}<br>
-          <strong>Occupation:</strong> {{ guardian.occupation }}<br>
-          <strong>Income:</strong> KES {{ guardian.income|floatformat:0 }}
-        </li>
-        <hr>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="text-muted">No guardian information available.</p>
-  {% endif %}
+    <!-- Mobile Navbar -->
+    <nav class="navbar navbar-light bg-light d-md-none mb-3">
+      <div class="container-fluid">
+        <button class="navbar-toggler w-100" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+          📋 Quick Navigation
+        </button>
+        <div class="collapse mt-2" id="mobileMenu">
+          <div class="card shadow-sm">
+            <ul class="list-group list-group-flush" id="mobileNav">
+              <li class="list-group-item"><a class="nav-link" href="#student-details">👩‍🎓 Student Details</a></li>
+              <li class="list-group-item"><a class="nav-link" href="#guardian-info">👨‍👩‍👦 Guardian Info</a></li>
+              <li class="list-group-item"><a class="nav-link" href="#application-details">📝 Application</a></li>
+              <li class="list-group-item"><a class="nav-link" href="#siblings">👦 Siblings</a></li>
+              <li class="list-group-item"><a class="nav-link" href="#documents">📂 Documents</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
 
-  <!-- Application Details -->
-  <h5 class="mt-4">3. Application Details</h5>
-  <ul class="list-unstyled">
-    <li><strong>Fees Required:</strong> KES {{ application.fees_required }}</li>
-    <li><strong>Fees Paid:</strong> KES {{ application.fees_paid }}</li>
-    <li><strong>Amount Requested:</strong> KES {{ application.amount_requested }}</li>
-    <p><strong>Amount Awarded:</strong> <strong class="text-primary">KES {{ application.amount_awarded }}</strong></li>
-    <li><strong>Status:</strong> 
-      <span class="badge 
-        {% if application.status == 'approved' %}bg-success
-        {% elif application.status == 'rejected' %}bg-danger
-        {% else %}bg-warning text-dark
-        {% endif %}">
-        {{ application.status|title }}
-      </span>
-    </li>
-    <li><strong>Feedback:</strong> {{ application.feedback|default:"N/A" }}</li>
-    <li><strong>Bursary Type:</strong> {{ application.get_bursary_type_display }}</li>
-  </ul>
+    <!-- Main Content -->
+    <div class="col-md-9" data-bs-spy="scroll" data-bs-target="#previewNav, #mobileNav" data-bs-offset="100" tabindex="0">
 
-  <!-- Siblings Section -->
-  <h5 class="mt-4">4. Siblings in School</h5>
-  {% if siblings %}
-    <ul class="list-unstyled">
-      {% for sib in siblings %}
-        <li>{{ sib.name }} - {{ sib.school }} ({{ sib.class_level }})</li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="text-muted">No siblings listed.</p>
-  {% endif %}
+      <!-- Student Details -->
+      <div id="student-details" class="card mb-4 shadow-sm">
+        <div class="card-header fw-bold">1. Student Details</div>
+        <div class="card-body">
+          <p><strong>Name:</strong> {{ student.full_name|default:"-" }}</p>
+          <p><strong>Admission No:</strong> {{ student.admission_number }}</p>
+          <p><strong>ID No:</strong> {{ student.id_number }}</p>
+          <p><strong>Institution:</strong> {{ student.institution }}</p>
+          <p><strong>Course:</strong> {{ student.course }}</p>
+          <p><strong>Year:</strong> {{ student.year_of_study }}</p>
+          <p><strong>Category:</strong> {{ student.category }}</p>
+          <p><strong>Phone:</strong> {{ student.phone }}</p>
+        </div>
+      </div>
 
-  <!-- Documents Section -->
-  <h5 class="mt-4">5. Uploaded Documents</h5>
-  {% if supporting_documents %}
-    <ul class="list-unstyled">
-      {% for doc in supporting_documents %}
-        <li><strong>{{ doc.get_document_type_display }}:</strong>
-            <a href="{{ doc.file.url }}" target="_blank">📎 View</a></li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="text-muted">No documents uploaded.</p>
-  {% endif %}
+      <!-- Guardian Info -->
+      <div id="guardian-info" class="card mb-4 shadow-sm">
+        <div class="card-header fw-bold">2. Guardian Information</div>
+        <div class="card-body">
+          {% if guardians %}
+            {% for guardian in guardians %}
+              <div class="mb-3">
+                <p><strong>Name:</strong> {{ guardian.name }} ({{ guardian.relationship }})</p>
+                <p><strong>ID:</strong> {{ guardian.guardian_id_number }}</p>
+                <p><strong>Phone:</strong> {{ guardian.guardian_phone }}</p>
+                <p><strong>Occupation:</strong> {{ guardian.occupation }}</p>
+                <p><strong>Income:</strong> KES {{ guardian.income|floatformat:0 }}</p>
+              </div>
+              {% if not forloop.last %}<hr>{% endif %}
+            {% endfor %}
+          {% else %}
+            <p class="text-muted">No guardian information available.</p>
+          {% endif %}
+        </div>
+      </div>
 
-  <!-- Action Buttons -->
-  <div class="mt-4">
-    <button onclick="window.print()" class="btn btn-outline-secondary me-2">🖨️ Print</button>
-    <a href="{% url 'application_pdf' %}" class="btn btn-outline-primary">⬇️ Download as PDF</a>
+      <!-- Application Details -->
+      <div id="application-details" class="card mb-4 shadow-sm">
+        <div class="card-header fw-bold">3. Application Details</div>
+        <div class="card-body">
+          <p><strong>Fees Required:</strong> KES {{ application.fees_required }}</p>
+          <p><strong>Fees Paid:</strong> KES {{ application.fees_paid }}</p>
+          <p><strong>Amount Requested:</strong> KES {{ application.amount_requested }}</p>
+          <p><strong>Amount Awarded:</strong> 
+            <span class="fw-bold text-primary">KES {{ application.amount_awarded }}</span>
+          </p>
+          <p><strong>Status:</strong> 
+            <span class="badge 
+              {% if application.status == 'approved' %}bg-success
+              {% elif application.status == 'rejected' %}bg-danger
+              {% else %}bg-warning text-dark
+              {% endif %}">
+              {{ application.status|title }}
+            </span>
+          </p>
+          <p><strong>Feedback:</strong> {{ application.feedback|default:"N/A" }}</p>
+          <p><strong>Bursary Type:</strong> {{ application.get_bursary_type_display }}</p>
+        </div>
+      </div>
+
+      <!-- Siblings Section -->
+      <div id="siblings" class="card mb-4 shadow-sm">
+        <div class="card-header fw-bold">4. Siblings in School</div>
+        <div class="card-body">
+          {% if siblings %}
+            <ul class="list-group">
+              {% for sib in siblings %}
+                <li class="list-group-item">{{ sib.name }} - {{ sib.school }} ({{ sib.class_level }})</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No siblings listed.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Documents Section -->
+      <div id="documents" class="card mb-4 shadow-sm">
+        <div class="card-header fw-bold">5. Uploaded Documents</div>
+        <div class="card-body">
+          {% if supporting_documents %}
+            <ul class="list-group">
+              {% for doc in supporting_documents %}
+                <li class="list-group-item">
+                  <strong>{{ doc.get_document_type_display }}:</strong>
+                  <a href="{{ doc.file.url }}" target="_blank">📎 View</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No documents uploaded.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex justify-content-center gap-3 mt-4">
+        <button onclick="window.print()" class="btn btn-outline-secondary">🖨️ Print</button>
+        <a href="{% url 'application_pdf' %}" class="btn btn-outline-primary">⬇️ Download as PDF</a>
+      </div>
+
+    </div>
   </div>
 </div>
+
+<!-- Smooth scrolling for sidebar -->
+<script>
+  document.querySelectorAll('#previewNav a, #mobileNav a').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.querySelector(this.getAttribute('href')).scrollIntoView({
+        behavior: 'smooth'
+      });
+    });
+  });
+</script>
 {% endblock %}
+
+
+
 
 

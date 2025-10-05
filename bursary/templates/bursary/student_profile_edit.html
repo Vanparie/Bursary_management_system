@@ -1,5 +1,6 @@
 {% extends 'bursary/base.html' %}
 {% load form_extras %}
+
 {% block title %}Edit Profile{% endblock %}
 
 {% block content %}
@@ -15,34 +16,20 @@
         <div class="mb-3">
           <label class="form-label">{{ field.label }}</label>
           {{ field|add_class:"form-control" }}
+
           {% if field.name == 'profile_pic' and student_form.instance.profile_pic %}
-            <div class="mt-2">
-              <img src="{{ student_form.instance.profile_pic.url }}" alt="Current Profile Picture" class="img-thumbnail" width="120">
+            <div class="mt-3 text-center">
+              <label class="form-label">Current Profile Picture</label><br>
+              <img src="{{ student_form.instance.profile_pic.url }}" alt="Profile Picture" class="img-thumbnail rounded" width="120" height="120">
             </div>
-        <!-- Preview Profile Picture -->
-        <div class="mb-3 text-center">
-          <label class="form-label">Profile Picture Preview</label><br>
-          <img id="preview" src="{{ student.profile_pic.url }}" class="rounded" width="120" height="120"
-            {% if not student.profile_pic %}style="display:none;"{% endif %}>
-        </div>
-    
           {% endif %}
+
           {% if field.errors %}
             <div class="text-danger small">{{ field.errors.0 }}</div>
           {% endif %}
         </div>
       {% endfor %}
 
-      <h5>Account Info</h5>
-      {% for field in user_form %}
-        <div class="mb-3">
-          <label class="form-label">{{ field.label }}</label>
-          {{ field|add_class:"form-control" }}
-          {% if field.errors %}
-            <div class="text-danger small">{{ field.errors.0 }}</div>
-          {% endif %}
-        </div>
-      {% endfor %}
 
       <div class="text-center mt-4">
         <button type="submit" class="btn btn-primary">💾 Save Changes</button>
@@ -52,3 +39,4 @@
   </div>
 </div>
 {% endblock %}
+

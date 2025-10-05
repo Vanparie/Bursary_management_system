@@ -1,0 +1,41 @@
+{% extends 'bursary/base.html' %}
+{% block title %}Student Login{% endblock %}
+
+{% block content %}
+<div class="container col-md-6 offset-md-3 mt-5">
+    <h2 class="text-center mb-4">🔐 Student Login</h2>
+
+    
+
+    <form method="post" class="card card-body shadow-sm" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="mb-3">
+            {{ form.username.label_tag }}
+            {{ form.username }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.password.label_tag }}
+            {{ form.password }}
+        </div>
+
+        <div class="form-check mb-3">
+            <input type="checkbox" class="form-check-input" name="remember_me" id="rememberMe">
+            <label class="form-check-label" for="rememberMe">Remember Me</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+
+        <p class="mt-3 text-center">
+            <a href="{% url 'password_reset' %}?user_type=student">Forgot your password?</a>
+        </p>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+

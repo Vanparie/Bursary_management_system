@@ -1,0 +1,47 @@
+{% extends 'bursary/base.html' %}
+{% block title %}Privacy Policy{% endblock %}
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h2 class="mb-4">Privacy Policy</h2>
+    <p>Effective Date: {% now "d M Y" %}</p>
+
+    <p>This Privacy Policy explains how <strong>BursaryFlow</strong> (“we,” “our,” or “us”) collects, uses, stores, and protects the information you provide when using the Bursary Management System.</p>
+
+    <h4>1. Information We Collect</h4>
+    <ul>
+        <li><strong>Identification Data:</strong> National ID, NEMIS number, admission number.</li>
+        <li><strong>Personal Information:</strong> Names, email, guardian details, contact information.</li>
+        <li><strong>Application Data:</strong> Education background, financial information, supporting documents.</li>
+        <li><strong>System Logs:</strong> Login timestamps, activity logs, IP addresses.</li>
+    </ul>
+
+    <h4>2. How We Use Your Data</h4>
+    <ul>
+        <li>To process bursary applications and verify eligibility.</li>
+        <li>To communicate with applicants and officers.</li>
+        <li>To improve system functionality and user experience.</li>
+        <li>To comply with legal, audit, and reporting obligations.</li>
+    </ul>
+
+    <h4>3. Data Sharing & Disclosure</h4>
+    <p>Your personal information will only be shared with authorized officers, administrators, and government stakeholders responsible for bursary allocation. We do not sell or share data with third parties for marketing purposes.</p>
+
+    <h4>4. Data Protection</h4>
+    <p>We implement security measures including:</p>
+    <ul>
+        <li>Password hashing and encrypted transmission (HTTPS).</li>
+        <li>Role-based access control (students, officers, admin).</li>
+        <li>File validation and secure document storage.</li>
+        <li>Audit logs of officer activity.</li>
+    </ul>
+
+    <h4>5. Your Rights</h4>
+    <p>As per the Kenya Data Protection Act (2019), you have the right to access, update, correct, or request deletion of your data by contacting system administrators.</p>
+
+    <h4>6. Data Retention</h4>
+    <p>Applications and supporting records are retained for as long as necessary to fulfill bursary allocation and reporting requirements, after which they may be securely archived or anonymized.</p>
+
+    <h4>7. Contact</h4>
+    <p>For privacy-related concerns, contact: <a href="mailto:support@bursaryflow.ke">support@bursaryflow.ke</a></p>
+</div>
+{% endblock %}

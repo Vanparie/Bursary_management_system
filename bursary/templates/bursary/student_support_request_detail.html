@@ -1,0 +1,24 @@
+{% extends 'bursary/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Support Request: {{ support_request.subject }}</h3>
+    <p><strong>Message:</strong> {{ support_request.message }}</p>
+    <p><strong>Status:</strong>
+        {% if support_request.resolved %}
+            <span class="badge bg-success">Resolved</span>
+        {% else %}
+            <span class="badge bg-warning">Pending</span>
+        {% endif %}
+    </p>
+    <p><strong>Officer Feedback:</strong></p>
+    {% if support_request.officer_action %}
+        <div class="p-3 border rounded bg-light">{{ support_request.officer_action }}</div>
+    {% else %}
+        <em class="text-muted">No feedback yet</em>
+    {% endif %}
+    <p class="text-muted mt-3"><small>Submitted: {{ support_request.created_at|date:"M d, Y H:i" }}</small></p>
+
+    <a href="{% url 'student_support_requests' %}" class="btn btn-secondary">Back to My Requests</a>
+</div>
+{% endblock %}

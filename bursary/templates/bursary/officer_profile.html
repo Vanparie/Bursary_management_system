@@ -1,37 +1,75 @@
-{% extends 'bursary/base.html' %}
+{% extends 'bursary/officer_base.html' %}
+{% load static %}
 
 {% block title %}Officer Profile{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <h2 class="mb-4 text-center fw-bold">👤 My Officer Profile</h2>
+<div class="container-fluid mt-4">
+    <h2 class="fw-bold mb-4 text-center">👤 My Profile</h2>
 
-    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
-        <div class="card-body">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 700px;">
+        <div class="card-body text-center">
 
-            <!-- ✅ Profile Picture if Available -->
             {% if officer.profile_pic %}
-                <div class="text-center mb-3">
-                    <img src="{{ officer.profile_pic.url }}" alt="Profile Picture" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
-                </div>
+                <img src="{{ officer.profile_pic.url }}" alt="Profile Picture"
+                     class="rounded-circle shadow-sm border mb-3"
+                     width="130" height="130" style="object-fit:cover;">
+            {% else %}
+                <img src="{% static 'default_profile.png' %}" alt="Profile Picture"
+                     class="rounded-circle shadow-sm border mb-3"
+                     width="130" height="130" style="object-fit:cover;">
             {% endif %}
 
-            <h3 class="text-center">{{ officer.user.get_full_name|default:officer.user.username }}</h3>
+            <h4 class="mb-3">{{ officer.user.get_full_name|default:officer.user.username }}</h4>
 
-            <p><strong>Email:</strong> {{ officer.user.email }}</p>
-            <p><strong>Username:</strong> {{ officer.user.username }}</p>
+            <!-- Profile data in a nice table -->
+            <table class="table table-bordered table-striped text-start">
+                <tbody>
+                    <tr>
+                        <th width="35%">📧 Email</th>
+                        <td>{{ officer.user.email|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th>📱 Phone</th>
+                        <td>{{ officer.phone|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th>💼 Designation</th>
+                        <td>{{ officer.designation|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <th>🏛️ County</th>
+                        <td>{{ officer.constituency.county.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>📍 Constituency</th>
+                        <td>{{ officer.constituency.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>🎓 Bursary Type</th>
+                        <td>{{ officer.get_bursary_type_display }}</td>
+                    </tr>
+                </tbody>
+            </table>
 
-            <p><strong>Phone:</strong> {{ officer.phone_number|default:"N/A" }}</p>
-            <p><strong>Designation:</strong> {{ officer.position|default:"Not provided" }}</p>
+            <!-- Action buttons -->
+            <div class="d-flex gap-2 justify-content-center mt-3">
+                <a href="{% url 'edit_officer_profile' %}" class="btn btn-primary">✏️ Edit Profile</a>
+                <a href="{% url 'officer_password_change' %}" class="btn btn-warning">🔑 Change Password</a>
+            </div>
 
-            <hr>
-            <p><strong>County:</strong> {{ officer.constituency.county.name }}</p>
-            <p><strong>Constituency:</strong> {{ officer.constituency.name }}</p>
-            <p><strong>Bursary Type:</strong> {{ officer.get_bursary_type_display }}</p>
+            <div class="mt-3">
+                <a href="{% url 'officer_dashboard' %}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+            </div>
 
-            <a href="{% url 'officer_dashboard' %}" class="btn btn-outline-primary w-100 mt-3">← Back to Dashboard</a>
         </div>
     </div>
 </div>
 {% endblock %}
+
+
+
+
+
+
 

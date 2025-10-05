@@ -57,7 +57,16 @@
             <p><strong>Last Login:</strong> {{ request.user.last_login|date:"d M Y H:i" }}</p>
         </div>
         <div class="card-body">
-            <p><strong>Username:</strong> {{ request.user.username }}</p>
+            <p><strong>Username:</strong>
+                {% if student.id_number %}
+                    {{ student.id_number }}
+                {% elif student.nemis_number %}
+                    {{ student.nemis_number }}
+                {% else %}
+                    {{ request.user.username }}
+                {% endif %}
+            </p>
+
             <p><strong>Email:</strong> {{ request.user.email }}</p>
             <a href="{% url 'student_profile' %}" class="btn btn-sm btn-outline-dark">⚙️ Update My Profile</a>
           {#  <a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-danger ms-2">🔐 Change Password</a> #}

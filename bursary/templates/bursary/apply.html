@@ -18,31 +18,34 @@
             <!-- 1. Student Details -->
             <h4 class="mt-4">1. Personal Details</h4>
             {% for field in student_form %}
-              <div class="mb-3">
-                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field|add_class:"form-control" }}
-                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
-              </div>
+              {% if field.name not in 'has_disability previous_bursary disability_details previous_bursary_details' %}
+                <div class="mb-3">
+                  <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field|add_class:"form-control" }}
+                  {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                  {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                </div>
+              {% endif %}
             {% endfor %}
 
-            <!-- Disability and Previous Bursary -->
+            <!-- 1a. Disability -->
             <div class="form-check mb-2">
-              <input type="checkbox" class="form-check-input" name="has_disability" id="has_disability">
-              <label class="form-check-label" for="has_disability">I have a disability</label>
+              {{ student_form.has_disability|add_class:"form-check-input" }}
+              <label class="form-check-label" for="{{ student_form.has_disability.id_for_label }}">I have a disability</label>
             </div>
-            <div id="disability_details" class="mb-3" style="display: none;">
-              <label class="form-label">Please provide details of your disability:</label>
-              <textarea class="form-control" name="disability_details" rows="3"></textarea>
+            <div id="disability_details" class="mb-3" style="display: {% if student_form.instance.has_disability %}block{% else %}none{% endif %};">
+              {{ student_form.disability_details|add_class:"form-control" }}
+              {% if student_form.disability_details.errors %}<div class="text-danger small">{{ student_form.disability_details.errors.0 }}</div>{% endif %}
             </div>
 
+            <!-- 1b. Previous Bursary -->
             <div class="form-check mb-2">
-              <input type="checkbox" class="form-check-input" name="received_bursary_before" id="received_bursary_before">
-              <label class="form-check-label" for="received_bursary_before">I have received a bursary before</label>
+              {{ student_form.previous_bursary|add_class:"form-check-input" }}
+              <label class="form-check-label" for="{{ student_form.previous_bursary.id_for_label }}">I have received a bursary before</label>
             </div>
-            <div id="previous_bursary_details" class="mb-3" style="display: none;">
-              <label class="form-label">Please provide details of the previous bursary received:</label>
-              <textarea class="form-control" name="previous_bursary_details" rows="3"></textarea>
+            <div id="previous_bursary_details" class="mb-3" style="display: {% if student_form.instance.previous_bursary %}block{% else %}none{% endif %};">
+              {{ student_form.previous_bursary_details|add_class:"form-control" }}
+              {% if student_form.previous_bursary_details.errors %}<div class="text-danger small">{{ student_form.previous_bursary_details.errors.0 }}</div>{% endif %}
             </div>
 
             <!-- 2. Guardian Info -->
@@ -59,7 +62,7 @@
             <h4 class="mt-4">3. Application Details</h4>
             <div class="mb-3">
               <label class="form-label">Constituency</label>
-              <input type="text" class="form-control" value="{{ student.constituency.name }}" readonly>
+              <input type="text" class="form-control" value="{{ student_form.instance.constituency.name }}" readonly>
             </div>
             {% for field in application_form %}
               {% if field.name != 'constituency' %}
@@ -88,7 +91,6 @@
                       </div>
                     {% endif %}
                   {% endfor %}
-
                   {{ form.DELETE|add_class:"d-none" }}
                 </div>
               {% endfor %}
@@ -124,7 +126,7 @@
                 </div>
               {% endfor %}
             </div>
-            <button type="button" class="btn btn-outline-secondary mb-3" id="add-document-btn">➕ Add Another Document</button>
+            <button type="button" class="btn btn-outline-primary mb-3" id="add-document-btn">➕ Add Another Document</button>
 
             <!-- Submit Button -->
             <div class="text-center mt-4">
@@ -155,40 +157,62 @@
 
 <!-- JS Section -->
 <script>
-  document.getElementById('has_disability').addEventListener('change', function() {
-    document.getElementById('disability_details').style.display = this.checked ? 'block' : 'none';
-  });
-  document.getElementById('received_bursary_before').addEventListener('change', function() {
-    document.getElementById('previous_bursary_details').style.display = this.checked ? 'block' : 'none';
-  });
+  // Empty form templates from Django
+  const sibling_formset_empty_form = `{{ sibling_formset.empty_form.as_p|escapejs }}`;
+  const document_formset_empty_form = `{{ document_formset.empty_form.as_p|escapejs }}`;
 
+  // Toggle disability details
+  const disabilityCheckbox = document.getElementById('{{ student_form.has_disability.id_for_label }}');
+  const disabilityDetails = document.getElementById('disability_details');
+  if (disabilityCheckbox) {
+    disabilityCheckbox.addEventListener('change', function() {
+      disabilityDetails.style.display = this.checked ? 'block' : 'none';
+    });
+  }
+
+  // Toggle previous bursary details
+  const bursaryCheckbox = document.getElementById('{{ student_form.previous_bursary.id_for_label }}');
+  const bursaryDetails = document.getElementById('previous_bursary_details');
+  if (bursaryCheckbox) {
+    bursaryCheckbox.addEventListener('change', function() {
+      bursaryDetails.style.display = this.checked ? 'block' : 'none';
+    });
+  }
+
+  // Mark for delete
   function markForDelete(button) {
     const form = button.closest('.form-item, .sibling-item');
     form.querySelector('input[type=checkbox][name$="-DELETE"]').checked = true;
     form.style.display = 'none';
   }
 
-  // Dynamic siblings addition
+  // Add sibling
   document.getElementById('add-sibling-btn').addEventListener('click', function () {
-    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+    const totalForms = document.getElementById('id_siblings-TOTAL_FORMS'); 
     const newIdx = parseInt(totalForms.value);
-    const template = document.getElementById('empty-sibling-form').innerHTML.replace('__FORM__', sibling_formset_empty_form.replace(/__prefix__/g, newIdx));
-    document.getElementById('siblings-container').insertAdjacentHTML('beforeend', template);
+    const newForm = sibling_formset_empty_form.replace(/__prefix__/g, newIdx);
+    document.getElementById('siblings-container').insertAdjacentHTML('beforeend',
+      `<div class="border p-3 mb-3 rounded shadow-sm bg-light sibling-item position-relative">
+         <button type="button" class="btn-close position-absolute top-0 end-0 m-2"
+                 aria-label="Remove" onclick="markForDelete(this)"></button>
+         ${newForm}
+       </div>`);
     totalForms.value = newIdx + 1;
   });
 
-  // Dynamic supporting documents addition
+  // Add document
   document.getElementById('add-document-btn').addEventListener('click', function () {
-    const totalForms = document.getElementById('id_documents_set-TOTAL_FORMS');
+    const totalForms = document.getElementById('id_documents-TOTAL_FORMS'); // ✅ correct prefix
     const newIdx = parseInt(totalForms.value);
-    const template = document.getElementById('empty-document-form').innerHTML.replace('__FORM__', document_formset_empty_form.replace(/__prefix__/g, newIdx));
-    document.getElementById('documents-container').insertAdjacentHTML('beforeend', template);
+    const newForm = document_formset_empty_form.replace(/__prefix__/g, newIdx);
+    document.getElementById('documents-container').insertAdjacentHTML('beforeend',
+      `<div class="border p-3 mb-3 rounded shadow-sm bg-light form-item position-relative">
+         <button type="button" class="btn-close position-absolute top-0 end-0 m-2"
+                 aria-label="Remove" onclick="markForDelete(this)"></button>
+         ${newForm}
+       </div>`);
     totalForms.value = newIdx + 1;
   });
-
-  // Make Django's empty form HTML accessible to JS
-  const sibling_formset_empty_form = `{{ sibling_formset.empty_form.as_p|escapejs }}`;
-  const document_formset_empty_form = `{{ document_formset.empty_form.as_p|escapejs }}`;
 </script>
 
 {% if application_deadline %}
@@ -199,6 +223,12 @@
   </div>
 {% endif %}
 {% endblock %}
+
+
+
+
+
+
 
 
 

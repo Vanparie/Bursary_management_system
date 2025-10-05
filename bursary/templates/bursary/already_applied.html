@@ -1,87 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Already Applied</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh; /* Ensures the body takes full height of the viewport */
-        }
-        .container {
-            width: 80%;
-            max-width: 800px;
-            margin: 50px auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            flex: 1; /* Allows the content to take available space */
-        }
-        h1 {
-            color: #d9534f;
-            font-size: 2em;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        p {
-            font-size: 1.1em;
-            text-align: center;
-        }
-        .btn {
-            display: block;
-            width: 200px;
-            margin: 30px auto;
-            padding: 10px;
-            background-color: #5bc0de;
-            color: #fff;
-            text-align: center;
-            font-size: 1em;
-            text-decoration: none;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .btn:hover {
-            background-color: #31b0d5;
-        }
+{% extends "bursary/base.html" %}
 
-        /* Footer styles */
-        footer {
-            background-color: #e2dfdf;
-            color: #423a3a;
-            text-align: center;
-            padding: 20px;
-            font-size: 0.9em;
-        }
-        footer a {
-            color: #5bc0de;
-            text-decoration: none;
-        }
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
+{% block title %}Already Applied{% endblock %}
 
-    <div class="container">
-        <h1>Application Submitted!</h1>
-        <p>It looks like you have already applied for the bursary. Thank you for your submission!</p>
-        <p>If you need to update your application, please contact support.</p>
-        <a href="{% url 'student_dashboard' %}" class="btn">Go to Dashboard</a>
+{% block content %}
+<div class="container my-5">
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+            <h1 class="text-danger mb-4">Application Submitted!</h1>
+            <p class="lead mb-3">
+                It looks like you have already applied for the bursary. Thank you for your submission!
+            </p>
+            <p class="mb-4">
+                If you need to update your application, please 
+                <a href="{% url 'contact_support' %}" class="fw-bold text-decoration-none text-primary">
+                    contact support
+                </a>.
+            </p>
+            <a href="{% url 'student_dashboard' %}" class="btn btn-primary px-4">
+                Go to Dashboard
+            </a>
+        </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Footer Section -->
-    <footer>
-        <p>&copy; 2025 Bursary Management System | Built for Kenyan Constituencies and Counties</p>
-    </footer>
-
-</body>
-</html>
 

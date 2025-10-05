@@ -1,41 +1,166 @@
-{% extends 'bursary/base.html' %}
+{% extends 'bursary/officer_base.html' %}
 {% block title %}Officer Reports{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>📊 Officer Reports</h2>
+<div class="container-fluid mt-4">
+  <h2 class="fw-bold mb-4">📑 Reports & Exports</h2>
 
-  <div class="row my-4">
-    <div class="col-md-4">
-      <div class="card text-bg-primary mb-3">
-        <div class="card-body">
-          <h5>Total Applications</h5>
-          <h3>{{ total_apps }}</h3>
-        </div>
-      </div>
+  <!-- Date Filter Form -->
+<form method="get" class="row g-3 mb-4 align-items-end">
+    <div class="col-md-3">
+        <label for="start_date" class="form-label">Start Date</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
     </div>
-    <div class="col-md-4">
-      <div class="card text-bg-success mb-3">
-        <div class="card-body">
-          <h5>Amount Requested</h5>
-          <h3>KES {{ total_requested|floatformat:0 }}</h3>
-        </div>
-      </div>
+    <div class="col-md-3">
+        <label for="end_date" class="form-label">End Date</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
     </div>
-    <div class="col-md-4">
-      <div class="card text-bg-warning mb-3">
-        <div class="card-body">
-          <h5>Amount Approved</h5>
-          <h3>KES {{ total_approved|floatformat:0 }}</h3>
-        </div>
-      </div>
+    <div class="col-md-6 d-flex gap-4">
+        <button type="submit" class="btn btn-primary">Apply</button>
+        <a href="{% url 'export_applications_csv' %}?start_date={{ start_date }}&end_date={{ end_date }}" 
+           class="btn btn-success">Export CSV</a>
+        <a href="{% url 'export_applications_pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}" 
+           class="btn btn-danger">Export PDF</a>
     </div>
+</form>
+
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+      <div class="col-md-4">
+          <div class="card text-center shadow-sm border-0 bg-light">
+              <div class="card-body">
+                  <h5>Total Applications</h5>
+                  <p class="fs-4 fw-bold">{{ total_apps }}</p>
+              </div>
+          </div>
+      </div>
+      <div class="col-md-4">
+          <div class="card text-center shadow-sm border-0 bg-light">
+              <div class="card-body">
+                  <h5>Total Requested</h5>
+                  <p class="fs-4 fw-bold">KES {{ total_requested|floatformat:0 }}</p>
+              </div>
+          </div>
+      </div>
+      <div class="col-md-4">
+          <div class="card text-center shadow-sm border-0 bg-light">
+              <div class="card-body">
+                  <h5>Total Approved</h5>
+                  <p class="fs-4 fw-bold">KES {{ total_approved|floatformat:0 }}</p>
+              </div>
+          </div>
+      </div>
   </div>
 
-  <div class="mb-4">
-    <a href="{% url 'export_applications_csv' %}" class="btn btn-outline-primary">⬇️ Export Applications (CSV)</a>
-    <a href="{% url 'export_officer_logs' %}" class="btn btn-outline-secondary">⬇️ Export Logs (CSV)</a>
+  <!-- Status Breakdown -->
+  <div class="card mb-4 shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">📊 Status Breakdown</h5>
+          <div>
+              <button id="pieBtn" type="button" class="btn btn-sm btn-outline-primary">Pie</button>
+              <button id="barBtn" type="button" class="btn btn-sm btn-outline-secondary">Bar</button>
+          </div>
+      </div>
+      <div class="card-body">
+          <canvas id="statusChart" height="120"></canvas>
+      </div>
   </div>
 
+  <!-- Aggregated by Ward -->
+  <div class="card shadow-sm">
+      <div class="card-header">
+          <h5 class="mb-0">🏘️ Aggregated by Ward</h5>
+      </div>
+      <div class="card-body table-responsive">
+          <table class="table table-bordered table-striped">
+              <thead class="table-dark">
+                  <tr>
+                      <th>Ward</th>
+                      <th>Pending</th>
+                      <th>Approved</th>
+                      <th>Rejected</th>
+                      <th>Total</th>
+                      <th>Approved Amt</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  {% for row in ward_data %}
+                  <tr>
+                      <td>{{ row.ward__name|default:"(Unassigned)" }}</td>
+                      <td>{{ row.pending }}</td>
+                      <td>{{ row.approved }}</td>
+                      <td>{{ row.rejected }}</td>
+                      <td>{{ row.total }}</td>
+                      <td>KES {{ row.approved_amount|floatformat:0 }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                      <td colspan="6" class="text-center">No data available.</td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
+      </div>
+  </div>
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = {{ chart_labels|safe }};
+    const values = {{ chart_values|safe }};
+
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    let statusChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Applications',
+                data: values,
+                backgroundColor: ['#f6c23e', '#1cc88a', '#e74a3b']
+            }]
+        }
+    });
+
+    document.getElementById('pieBtn').addEventListener('click', function() {
+        statusChart.destroy();
+        statusChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Applications',
+                    data: values,
+                    backgroundColor: ['#f6c23e', '#1cc88a', '#e74a3b']
+                }]
+            }
+        });
+    });
+
+    document.getElementById('barBtn').addEventListener('click', function() {
+        statusChart.destroy();
+        statusChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Applications',
+                    data: values,
+                    backgroundColor: ['#f6c23e', '#1cc88a', '#e74a3b']
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
+
+
+
+
