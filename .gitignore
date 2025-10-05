@@ -26,3 +26,6 @@ staticfiles/
 # OS files
 .DS_Store
 Thumbs.db
+
+
+dev_journal.md
