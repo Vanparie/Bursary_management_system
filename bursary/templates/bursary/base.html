@@ -63,7 +63,6 @@
             color: #fff !important;
         }
 
-        /* 🔹 Scoped to navbar only */
         nav.navbar .nav-link {
             font-weight: 500;
             color: #fff !important;
@@ -151,16 +150,45 @@
             font-size: 0.9rem;
         }
 
-        /* ✅ Mobile tweaks */
+        /* ✅ Mobile tweaks & Navbar improvements */
         @media (max-width: 768px) {
+            /* Branding bar smaller */
             .branding-bar h4 {
                 font-size: 1.2rem;
             }
+
+            /* Navbar links */
             nav .navbar-nav {
-                text-align: center;
+                text-align: left; /* better alignment for mobile */
             }
+
             nav .nav-item {
-                margin: 4px 0;
+                margin: 6px 0; /* extra spacing for touch targets */
+            }
+
+            nav .nav-link {
+                padding: 10px 15px;
+                font-size: 0.95rem;
+            }
+
+            /* Officer info smaller on mobile and wrapped */
+            nav .nav-link.disabled {
+                font-size: 0.85rem;
+                white-space: normal;
+            }
+
+            /* Dropdowns full width for easier tapping */
+            nav .dropdown-menu {
+                width: 100%;
+                left: 0;
+                right: 0;
+            }
+
+            /* Support badge spacing */
+            .navbar-nav .position-relative .badge {
+                top: 0.25rem;
+                right: 0.5rem;
+                transform: translate(0, 0);
             }
         }
     </style>
@@ -186,58 +214,79 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{% url 'landing_page' %}">{{ branding.name|default:"BursaryFlow" }}</a>
+        <!-- Branding -->
+        <a class="navbar-brand fw-bold" href="{% url 'landing_page' %}">BursaryFlow</a>
+
+        <!-- Toggler for mobile -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown">
             <span class="navbar-toggler-icon"></span>
         </button>
 
+        <!-- Navbar links -->
         <div class="collapse navbar-collapse" id="navbarNavDropdown">
             <ul class="navbar-nav ms-auto align-items-lg-center">
+
                 {% if not user.is_authenticated %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'landing_page' %}">Home</a></li>
+
+                    <!-- Login Dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown">Login</a>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <a class="nav-link dropdown-toggle" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown">
+                            Login
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="loginDropdown">
                             <li><a class="dropdown-item" href="{% url 'student_login' %}">Student Login</a></li>
                             <li><a class="dropdown-item" href="{% url 'officer_login' %}">Officer Login</a></li>
                         </ul>
                     </li>
+
                     <li class="nav-item"><a class="nav-link" href="{% url 'student_signup' %}">Register</a></li>
+
                 {% else %}
                     {% if user.is_staff and not user.is_superuser %}
                         {% if officer %}
                             <li class="nav-item">
-                                <span class="nav-link disabled text-light">
+                                <span class="nav-link disabled text-light small">
                                     📍 {{ officer.constituency.name }} | {{ officer.get_bursary_type_display }}
                                 </span>
                             </li>
                         {% endif %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'officer_dashboard' %}">Officer Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'officer_logs' %}">📜 Activity Logs</a></li>
+
                     {% elif user.is_superuser %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
+
                     {% else %}
+                        <!-- Student links -->
                         <li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'apply_bursary' %}">Apply</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'application_preview' %}">Preview</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'student_profile' %}">My Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'contact_support' %}">Contact Support</a></li>
-                        <li class="nav-item">
+
+                        <!-- Support Requests with badge -->
+                        <li class="nav-item position-relative">
                             <a class="nav-link" href="{% url 'student_support_requests' %}">
                                 My Support Requests
                                 {% if student_support_feedback_count %}
-                                    <span class="badge bg-danger ms-2">{{ student_support_feedback_count }}</span>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        {{ student_support_feedback_count }}
+                                    </span>
                                 {% endif %}
                             </a>
                         </li>
                     {% endif %}
+
+                    <!-- Logout -->
                     <li class="nav-item">
                         <form method="POST" action="{% url 'logout' %}" class="d-inline">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-link nav-link text-white">Logout</button>
+                            <button type="submit" class="btn btn-link nav-link text-white p-0">Logout</button>
                         </form>
                     </li>
                 {% endif %}
+
             </ul>
         </div>
     </div>
@@ -268,7 +317,7 @@
 
 <!-- Footer -->
 <footer>
-    <p>© {% now "Y" %} {{ branding.name|default:"BursaryFlow" }} | Samburu West | All Rights Reserved.</p>
+    <p>© {% now "Y" %} BursaryFlow | Samburu West | All Rights Reserved.</p>
     <a href="{% url 'privacy' %}" class="text-white">Privacy Policy</a> | 
     <a href="{% url 'terms' %}" class="text-white">Terms of Use</a>
 </footer>
@@ -276,6 +325,8 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+
 
 
 
