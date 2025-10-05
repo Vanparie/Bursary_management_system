@@ -62,6 +62,7 @@ from .models import (
 
 from functools import wraps
 from decimal import Decimal, InvalidOperation
+from django.http import HttpResponse, Http404
 
 
 # Notes:
@@ -1512,5 +1513,102 @@ def student_support_request_detail(request, pk):
     return render(request, "bursary/student_support_request_detail.html", {"support_request": support_request})
 
 
+def download_single_application(request, pk):
+    """
+    Download a single application as CSV.
+    """
+    try:
+        app = BursaryApplication.objects.select_related('student').get(id=pk)
+    except BursaryApplication.DoesNotExist:
+        raise Http404("Application not found.")
 
+    response = HttpResponse(content_type='text/csv')
+    filename = f"{app.student.admission_number}_application.csv"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    writer = csv.writer(response)
+    # Header
+    writer.writerow([
+        "First Name", "Last Name", "Admission No", "ID No", "Institution", "Course",
+        "Year of Study", "Constituency", "Fees Required", "Fees Paid", "Amount Requested",
+        "Amount Awarded", "Status", "Feedback", "Phone", "Email",
+        "Guardian Name", "Guardian Income", "Submission Date"
+    ])
+
+    student = app.student
+    guardians = student.guardians.all()
+
+    # Concatenate guardian names and incomes (comma-separated)
+    guardian_names = ", ".join([g.name for g in guardians]) if guardians else ""
+    guardian_incomes = ", ".join([str(g.income) for g in guardians]) if guardians else ""
+
+    writer.writerow([
+        student.first_name,
+        student.last_name,
+        student.admission_number,
+        student.id_number or student.nemis_number,
+        student.institution or '',
+        student.course or '',
+        student.year_of_study or '',
+        getattr(student.constituency, 'name', '') if hasattr(student, 'constituency') else '',
+        app.fees_required or '',
+        app.fees_paid or '',
+        app.amount_requested or '',
+        app.amount_awarded or '',
+        app.status,
+        app.feedback or '',
+        student.phone or '',
+        student.email or '',
+        guardian_names,
+        guardian_incomes,
+        app.date_applied.strftime("%Y-%m-%d %H:%M") if app.date_applied else ''
+    ])
+
+    return response
+
+
+def download_applications_by_status(request, status):
+    """
+    Download applications filtered by status as CSV.
+    """
+    applications = BursaryApplication.objects.select_related('student', 'student__guardian').filter(status=status)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="applications_{status}.csv"'
+
+    writer = csv.writer(response)
+    # Header
+    writer.writerow([
+        "First Name", "Last Name", "Admission No", "ID No", "Institution", "Course",
+        "Year of Study", "Constituency", "Fees Required", "Fees Paid", "Amount Requested",
+        "Amount Awarded", "Status", "Feedback", "Phone", "Email",
+        "Guardian Name", "Guardian Income", "Submission Date"
+    ])
+
+    for app in applications:
+        student = app.student
+        guardian = getattr(student, 'guardian', None)
+        writer.writerow([
+            student.first_name,
+            student.last_name,
+            student.admission_number,
+            student.id_number or student.nemis_number,
+            student.institution or '',
+            student.course or '',
+            student.year_of_study or '',
+            getattr(student.constituency, 'name', '') if hasattr(student, 'constituency') else '',
+            app.fees_required or '',
+            app.fees_paid or '',
+            app.amount_requested or '',
+            app.amount_awarded or '',
+            app.status,
+            app.feedback or '',
+            student.phone or '',
+            student.email or '',
+            guardian.full_name if guardian else '',
+            guardian.income if guardian else '',
+            app.submission_date.strftime("%Y-%m-%d %H:%M") if app.submission_date else ''
+        ])
+
+    return response
 

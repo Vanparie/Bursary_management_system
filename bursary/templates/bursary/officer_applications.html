@@ -37,8 +37,12 @@
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Applications List</h5>
-            <a href="{% url 'export_applications_csv' %}" class="btn btn-sm btn-outline-success">⬇️ Download All</a>
+            <div class="btn-group">
+                <a href="{% url 'export_applications_csv' %}?status={{ selected_status }}&ward={{ selected_ward }}&q={{ search_query }}" class="btn btn-sm btn-outline-success me-2">⬇️ Download Filtered</a>
+                <a href="{% url 'export_applications_csv' %}" class="btn btn-sm btn-outline-success">⬇️ Download All</a>
+            </div>
         </div>
+
         <div class="card-body table-responsive">
             <table class="table table-hover align-middle">
                 <thead class="table-dark">
@@ -68,8 +72,8 @@
                         <td>
                             <!-- Action Buttons -->
                             <a href="{% url 'application_detail' app.id %}" class="btn btn-sm btn-outline-primary">👁️</a>
-                            <a href="{% url 'export_applications_csv' %}" class="btn btn-sm btn-outline-secondary">⬇️</a>
-                            
+                            <!-- Individual download -->
+                            <a href="{% url 'download_single_application' app.id %}" class="btn btn-sm btn-outline-secondary">⬇️</a>
                         </td>
                     </tr>
                     {% empty %}
@@ -102,5 +106,6 @@
     </nav>
 </div>
 {% endblock %}
+
 
 
