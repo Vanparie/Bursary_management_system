@@ -262,27 +262,28 @@ def verify_identity_ajax(request):
 # ========================
 # Student Login
 # ========================
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from .forms import StudentLoginForm
+from .models import Student
+
+
 def student_login_view(request):
     if request.method == "POST":
-        form = StudentLoginForm(request=request, data=request.POST)
+        form = StudentLoginForm(request.POST)
         if form.is_valid():
-            identifier = form.cleaned_data["username"].strip()
-            password = form.cleaned_data["password"]
-
-            user = authenticate(request, username=identifier, password=password)
+            user = form.get_user()
             if user:
-                # ✅ Use select_related to avoid extra queries
-                student = Student.objects.select_related("user").filter(user=user).first()
+                # Ensure there's a Student record associated — show general inline error if missing
+                student = Student.objects.filter(user=user).first()
                 if student:
                     login(request, user)
                     return redirect("student_dashboard")
                 else:
-                    messages.error(request, "Your student record is missing. Please contact support.")
-                    return redirect("student_signup")
-
-            messages.error(request, "Invalid credentials. Use National ID (18+) or NEMIS (secondary).")
+                    form.add_error(None, "Your student record is missing. Please contact support.")
+        # If form is valid but user was not set, errors were already attached in form.clean()
     else:
-        form = StudentLoginForm(request=request)
+        form = StudentLoginForm()
 
     return render(request, "bursary/student_login.html", {"form": form})
 
