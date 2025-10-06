@@ -3,7 +3,7 @@ from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
 from .models import (
     Student, Guardian, Sibling, BursaryApplication, SupportingDocument,
-    SiteProfile, County, Constituency, OfficerProfile, Ward
+    SiteProfile, County, Constituency, OfficerProfile, Ward, LandingSlide, SuccessStory
 )
 from .resources import StudentResource
 
@@ -70,7 +70,6 @@ class SiteProfileForm(forms.ModelForm):
         return cleaned_data
 
 
-# --- SiteProfile Admin ---
 @admin.register(SiteProfile)
 class SiteProfileAdmin(admin.ModelAdmin):
     form = SiteProfileForm
@@ -104,6 +103,22 @@ admin.site.register(County)
 admin.site.register(OfficerProfile)
 admin.site.register(Ward)
 admin.site.register(Student, StudentAdmin)
+
+
+@admin.register(LandingSlide)
+class LandingSlideAdmin(admin.ModelAdmin):
+    list_display = ("headline", "is_active", "order", "updated_at")
+    list_editable = ("is_active", "order")
+    ordering = ("order",)
+    search_fields = ("headline", "subheadline")
+
+
+@admin.register(SuccessStory)
+class SuccessStoryAdmin(admin.ModelAdmin):
+    list_display = ("title", "is_active", "order", "updated_at")
+    list_editable = ("is_active", "order")
+    ordering = ("order",)
+    search_fields = ("title", "description")
 
 
 
