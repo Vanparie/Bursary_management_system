@@ -16,43 +16,171 @@
     </div>
 
    <!-- Deadline Ticker -->
-{% if site_profile and site_profile.application_deadline %}
-  <div class="deadline-ticker-wrapper">
-    <div class="deadline-ticker">
-      📢 Application Deadline: {{ site_profile.application_deadline|date:"F j, Y" }} – Submit your application on time!
+   {% if site_profile and site_profile.application_deadline %}
+   <div class="deadline-ticker-wrapper">
+       <div class="deadline-ticker">
+           📢 Application Deadline: {{ site_profile.application_deadline|date:"F j, Y" }} – Submit your application on time!
+       </div>
+   </div>
+   {% endif %}
+</div>
+
+<!-- ✅ Carousel for Slides -->
+{% if slides %}
+<div id="landingCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+  <div class="carousel-inner">
+    {% for slide in slides %}
+    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+      <img src="{{ slide.image.url }}" class="d-block w-100 rounded" alt="{{ slide.headline }}">
+      {% if slide.headline or slide.subheadline %}
+      <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
+        {% if slide.headline %}<h5>{{ slide.headline }}</h5>{% endif %}
+        {% if slide.subheadline %}<p>{{ slide.subheadline }}</p>{% endif %}
+        {% if slide.button_text and slide.button_url %}
+          <a href="{{ slide.button_url }}" class="btn btn-primary btn-sm">{{ slide.button_text }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
+    {% endfor %}
   </div>
+
+  <button class="carousel-control-prev" type="button" data-bs-target="#landingCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon"></span>
+    <span class="visually-hidden">Previous</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#landingCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon"></span>
+    <span class="visually-hidden">Next</span>
+  </button>
+</div>
 {% endif %}
 
-<!-- Features Section -->
-<div class="container py-4">
-    <div class="row text-center g-4">
+<!-- ✅ Unified Impact & Benefits Section -->
+<div class="container my-5">
+    <h2 class="text-center mb-4">Our Impact & Benefits</h2>
+    <div class="row g-4">
+
+        <!-- Impact Stats -->
+        {% if stats %}
         <div class="col-md-4">
-            <div class="border p-3 h-100 rounded shadow-sm">
-                <h4>📄 Simple Application</h4>
+            <div class="border p-4 h-100 rounded shadow-sm text-center bg-light">
+                <div class="mb-3">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135789.png" 
+                         alt="Students Benefited" class="img-fluid" style="max-height:80px;">
+                </div>
+                <h2 class="fw-bold text-primary">{{ stats.students|default:"0" }}</h2>
+                <p class="mb-0">🎓 Students Benefited</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="border p-4 h-100 rounded shadow-sm text-center bg-light">
+                <div class="mb-3">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2164/2164833.png" 
+                         alt="Funds Disbursed" class="img-fluid" style="max-height:80px;">
+                </div>
+                <h2 class="fw-bold text-success">Ksh {{ stats.funds|default:"0" }}</h2>
+                <p class="mb-0">💰 Total Funds Disbursed</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="border p-4 h-100 rounded shadow-sm text-center bg-light">
+                <div class="mb-3">
+                    <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" 
+                         alt="Coverage" class="img-fluid" style="max-height:80px;">
+                </div>
+                <h2 class="fw-bold text-danger">{{ stats.coverage|default:"0" }}</h2>
+                <p class="mb-0">{{ stats.coverage_label }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Features -->
+    <div class="row text-center g-4 mt-4">
+        <div class="col-md-4">
+            <div class="p-4 h-100 rounded shadow-sm bg-light text-center">
+                <div class="mb-3">
+                  <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" 
+                       alt="Simple Application" class="img-fluid" style="max-height:80px;">
+                </div>
+                <h4 class="fw-bold">📄 Simple Application</h4>
                 <p>Apply online in minutes. Upload required documents with ease.</p>
             </div>
         </div>
+
         <div class="col-md-4">
-            <div class="border p-3 h-100 rounded shadow-sm">
-                <h4>✅ Transparent Process</h4>
+            <div class="p-4 h-100 rounded shadow-sm bg-light text-center">
+                <div class="mb-3">
+                  <img src="https://cdn-icons-png.flaticon.com/512/1828/1828640.png" 
+                       alt="Transparent Process" class="img-fluid" style="max-height:80px;">
+                </div>
+                <h4 class="fw-bold">✅ Transparent Process</h4>
                 <p>Track your application status and get real-time updates.</p>
             </div>
         </div>
+
         <div class="col-md-4">
-            <div class="border p-3 h-100 rounded shadow-sm">
-                <h4>🔒 Secure & Reliable</h4>
+            <div class="p-4 h-100 rounded shadow-sm bg-light text-center">
+                <div class="mb-3">
+                  <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" 
+                       alt="Secure & Reliable" class="img-fluid" style="max-height:80px;">
+                </div>
+                <h4 class="fw-bold">🔒 Secure & Reliable</h4>
                 <p>Your data is protected with industry-standard security protocols.</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- How It Works Section -->
+<!-- ✅ Success Stories Carousel (Fade Transition) -->
+{% if success_stories %}
+<div class="container my-5">
+    <h2 class="text-center mb-4">Success Stories</h2>
+
+    <div id="successStoriesCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+      <div class="carousel-inner">
+        {% for story in success_stories %}
+        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+          <div class="row align-items-center">
+            <div class="col-md-5 text-center">
+              {% if story.image %}
+              <img src="{{ story.image.url }}" class="img-fluid rounded shadow" alt="{{ story.title }}" style="max-height:300px; object-fit:cover;">
+              {% endif %}
+            </div>
+            <div class="col-md-7">
+              <div class="p-4">
+                <h4 class="fw-bold">{{ story.title }}</h4>
+                {% if story.description %}
+                <p class="fst-italic text-muted">"{{ story.description }}"</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button class="carousel-control-prev" type="button" data-bs-target="#successStoriesCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#successStoriesCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+    </div>
+</div>
+{% endif %}
+
+<!-- ✅ How It Works Section -->
 <div class="container mt-5 mb-5 bg-light rounded p-4 text-center">
     <h2 class="mb-3">How It Works</h2>
     <ol class="list-group list-group-numbered mx-auto" style="max-width: 600px; text-align: left;">
-        <li class="list-group-item">Login using your National ID or NEMIS number and password</li>
+        <li class="list-group-item">Register an Account using your National ID or NEMIS number</li>
+        <li class="list-group-item">Login with your credentials</li>
         <li class="list-group-item">Fill in your personal and academic details</li>
         <li class="list-group-item">Upload supporting documents</li>
         <li class="list-group-item">Submit your application</li>
@@ -60,9 +188,15 @@
     </ol>
 </div>
 
-<!-- Extra CTA Section -->
+<!-- ✅ Extra CTA Section -->
 <div class="text-center my-5">
     <a href="{% url 'student_login' %}" class="btn btn-outline-dark btn-lg">Already have an account? Login</a>
 </div>
 
 {% endblock %}
+
+
+
+
+
+
