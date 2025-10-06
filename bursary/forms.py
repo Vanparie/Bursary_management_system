@@ -51,7 +51,15 @@ class StudentForm(forms.ModelForm):
 # ========================
 # Student Login Form
 # ========================
-class StudentLoginForm(AuthenticationForm):
+from django import forms
+from django.contrib.auth import authenticate, get_user_model
+from django.db.models import Q
+from .models import Student
+
+User = get_user_model()
+
+
+class StudentLoginForm(forms.Form):
     username = forms.CharField(
         label="National ID / NEMIS Number",
         widget=forms.TextInput(attrs={
@@ -67,8 +75,51 @@ class StudentLoginForm(AuthenticationForm):
         })
     )
 
-    def __init__(self, request=None, *args, **kwargs):
-        super().__init__(request=request, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user_cache = None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        identifier = (cleaned_data.get('username') or "").strip()
+        password = cleaned_data.get('password')
+
+        # If one of the fields is missing, let the field validators handle it.
+        if not identifier or not password:
+            return cleaned_data
+
+        # 1) Try to authenticate directly (identifier might already be the User.username)
+        user = authenticate(username=identifier, password=password)
+        if user:
+            self.user_cache = user
+            return cleaned_data
+
+        # 2) Try to find a Student matching ID / NEMIS / admission_number
+        student_qs = Student.objects.filter(
+            Q(id_number=identifier) | Q(nemis_number=identifier) | Q(admission_number=identifier)
+        )
+        if student_qs.exists():
+            student = student_qs.first()
+            # attempt authentication using the linked user's username (safe)
+            user = authenticate(username=student.user.username, password=password)
+            if user:
+                self.user_cache = user
+                return cleaned_data
+            # student found -> wrong password
+            self.add_error('password', 'Incorrect password. Please try again.')
+            return cleaned_data
+
+        # 3) If there is a User with this username but auth failed -> wrong password
+        if User.objects.filter(username=identifier).exists():
+            self.add_error('password', 'Incorrect password. Please try again.')
+        else:
+            # no account found for this identifier
+            self.add_error('username', 'No account found for this National ID or NEMIS Number.')
+
+        return cleaned_data
+
+    def get_user(self):
+        return self.user_cache
 
 
 # ========================
