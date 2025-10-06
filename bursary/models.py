@@ -353,5 +353,43 @@ class SupportRequest(models.Model):
         return self.officer_action
 
 
+class LandingSlide(models.Model):
+    headline = models.CharField(max_length=255, blank=True, null=True)
+    subheadline = models.CharField(max_length=255, blank=True, null=True)
+    button_text = models.CharField(max_length=100, blank=True, null=True)
+    button_url = models.URLField(blank=True, null=True)
+    image = models.ImageField(upload_to="landing/slides/")
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order"]
+        verbose_name = "Landing Slide"
+        verbose_name_plural = "Landing Slides"
+
+    def __str__(self):
+        return self.headline or f"Slide {self.id}"
+
+
+class SuccessStory(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to="landing/success_stories/", blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order"]
+        verbose_name = "Success Story"
+        verbose_name_plural = "Success Stories"
+
+    def __str__(self):
+        return self.title
+
+
 
 
