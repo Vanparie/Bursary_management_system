@@ -57,12 +57,13 @@ from .email_utils import send_application_email
 from .models import (
     Student, Guardian, Sibling, BursaryApplication, SupportingDocument,
     SiteProfile, OfficerProfile, Constituency, Ward, OfficerActivityLog,
-    SupportRequest
+    SupportRequest, LandingSlide, SuccessStory
 )
 
 from functools import wraps
 from decimal import Decimal, InvalidOperation
 from django.http import HttpResponse, Http404
+from django.db.models import Sum
 
 
 # Notes:
@@ -344,10 +345,71 @@ def change_password(request):
 # ========================
 # Landing Page View
 # ========================
+
 def landing_page(request):
-    # ✅ restrict fields to reduce payload
-    site_profile = SiteProfile.objects.only("id", "bursary_type", "county", "constituency").first()
-    return render(request, 'bursary/landing.html', {'site_profile': site_profile})
+    # ✅ Get branding profile (county or constituency)
+    site_profile = SiteProfile.objects.only(
+        "id", "bursary_type", "county", "constituency", "application_deadline"
+    ).first()
+
+    # ✅ Get landing content
+    slides = LandingSlide.objects.filter(is_active=True).order_by("order")
+    success_stories = SuccessStory.objects.filter(is_active=True).order_by("order")
+
+    # ✅ Calculate impact stats
+    total_students = BursaryApplication.objects.count()
+    total_funds = (
+        BursaryApplication.objects.aggregate(total=Sum("amount_awarded"))["total"] or 0
+    )
+
+    coverage_count, coverage_label = 0, ""
+
+    if site_profile:
+        bursary_type = site_profile.bursary_type.lower()
+
+        if bursary_type == "county" and site_profile.county:
+            # County-level bursary → count constituencies in this county
+            coverage_count = (
+                BursaryApplication.objects.filter(
+                    constituency__county=site_profile.county
+                )
+                .values("constituency")
+                .distinct()
+                .count()
+            )
+            coverage_label = "📍 Constituencies Covered"
+
+        elif bursary_type == "constituency" and site_profile.constituency:
+            # Constituency-level bursary → count wards in this constituency
+            coverage_count = (
+                BursaryApplication.objects.filter(
+                    constituency=site_profile.constituency
+                )
+                .values("ward")
+                .distinct()
+                .count()
+            )
+            coverage_label = "📍 Wards Covered"
+
+    # ✅ Package stats
+    stats = {
+        "students": total_students,
+        "funds": total_funds,
+        "coverage": coverage_count,
+        "coverage_label": coverage_label,
+    }
+
+    # ✅ Render template with everything
+    return render(
+        request,
+        "bursary/landing.html",
+        {
+            "site_profile": site_profile,
+            "slides": slides,
+            "success_stories": success_stories,
+            "stats": stats,
+        },
+    )
 
 
 # ========================
