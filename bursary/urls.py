@@ -13,6 +13,7 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     path('', views.landing_page, name='landing_page'),
+    #path("showcase/", views.LandingContent, name="landing_content"),
 
     # Student section
     #path('signup/', views.signup_view, name='signup'),
@@ -60,6 +61,9 @@ urlpatterns = [
     path('officer/support-requests/', views.officer_support_requests_view, name='officer_support_requests'),
     path('officer/support-request/<int:pk>/', views.officer_support_request_detail, name='officer_support_request_detail'),
     path('support-requests/<int:pk>/resolve/', views.resolve_support_request, name='resolve_support_request'),
+    path('officer/applications/download/status/<str:status>/', views.download_applications_by_status, name='download_applications_by_status'),
+    path('officer/application/<int:pk>/download/', views.download_single_application, name='download_single_application'),
+
 
     # Admin section
     #path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
