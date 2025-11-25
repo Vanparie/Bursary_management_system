@@ -1,0 +1,27 @@
+{% extends "bursary/base.html" %}
+
+{% block title %}Already Applied{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+            <h1 class="text-danger mb-4">Application Submitted!</h1>
+            <p class="lead mb-3">
+                It looks like you have already applied for the bursary. Thank you for your submission!
+            </p>
+            <p class="mb-4">
+                If you need to update your application, please 
+                <a href="{% url 'contact_support' %}" class="fw-bold text-decoration-none text-primary">
+                    contact support
+                </a>.
+            </p>
+            <a href="{% url 'student_dashboard' %}" class="btn btn-primary px-4">
+                Go to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

@@ -1,0 +1,306 @@
+{% extends 'bursary/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container col-md-6 offset-md-3 mt-5">
+  <h2 class="text-center mb-4">Student Signup</h2>
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger" role="alert">
+    {% for error in form.non_field_errors %}
+      {{ error }}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" id="student-signup-form" novalidate>
+    {% csrf_token %}
+
+    <!-- Hidden verification flags -->
+    <input type="hidden" id="id_verified_flag" name="id_verified_flag" value="false">
+    <input type="hidden" id="guardian_verified_flag" name="guardian_verified_flag" value="false">
+
+    <!-- Name fields -->
+    <div class="mb-3">
+      {{ form.first_name.label_tag }}
+      {% render_field form.first_name class="form-control" %}
+      <div class="text-danger">{{ form.first_name.errors }}</div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.middle_name.label_tag }}
+      {% render_field form.middle_name class="form-control" %}
+      <div class="text-danger">{{ form.middle_name.errors }}</div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.last_name.label_tag }}
+      {% render_field form.last_name class="form-control" %}
+      <div class="text-danger">{{ form.last_name.errors }}</div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.admission_number.label_tag }}
+      {% render_field form.admission_number class="form-control" %}
+      <div class="text-danger">{{ form.admission_number.errors }}</div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.email.label_tag }}
+      {% render_field form.email class="form-control" %}
+      <div class="text-danger">{{ form.email.errors }}</div>
+    </div>
+
+    <!-- ID type -->
+    <div class="mb-3">
+      <label class="form-label">Choose your Identification</label>
+      {% for radio in form.id_type %}
+      <div class="form-check form-check-inline">
+        {{ radio.tag }} {{ radio.choice_label }}
+      </div>
+      {% endfor %}
+      <div class="text-danger">{{ form.id_type.errors }}</div>
+    </div>
+
+    <!-- National ID -->
+    <div class="mb-3" id="idSection">
+      {{ form.id_number.label_tag }}
+      <div class="input-group">
+        {% render_field form.id_number class="form-control" %}
+        <button type="button" id="verify-id-btn" class="btn btn-outline-secondary">Verify ID</button>
+      </div>
+      <div id="id-verification-feedback" class="mt-2 text-sm"></div>
+      <div class="text-danger">{{ form.id_number.errors }}</div>
+    </div>
+
+    <!-- NEMIS -->
+    <div class="mb-3" id="nemisSection" style="display: none;">
+      {{ form.nemis_number.label_tag }}
+      {% render_field form.nemis_number class="form-control" %}
+      <div class="text-danger">{{ form.nemis_number.errors }}</div>
+
+      <!-- ✅ Guardian name fields (shown only for NEMIS) -->
+      <div id="nemis-guardian-fields">
+        <div class="mb-3">
+          <label for="guardian_first_name" class="form-label">Guardian First Name</label>
+          <input type="text" class="form-control" name="guardian_first_name" id="guardian_first_name" placeholder="">
+        </div>
+        <div class="mb-3">
+          <label for="guardian_last_name" class="form-label">Guardian Last Name</label>
+          <input type="text" class="form-control" name="guardian_last_name" id="guardian_last_name" placeholder="">
+        </div>
+      </div>
+
+      {{ form.guardian_id_number.label_tag }}
+      <div class="input-group">
+        {% render_field form.guardian_id_number class="form-control" %}
+        <button type="button" id="verify-guardian-id-btn" class="btn btn-outline-secondary btn-sm">Verify ID</button>
+      </div>
+      <div id="guardian-id-feedback" class="mt-2 text-sm"></div>
+      <div class="text-danger">{{ form.guardian_id_number.errors }}</div>
+    </div>
+
+    <!-- Passwords -->
+    <div class="mb-3">
+      {{ form.password1.label_tag }}
+      {% render_field form.password1 class="form-control" %}
+      <div class="text-danger">{{ form.password1.errors }}</div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.password2.label_tag }}
+      {% render_field form.password2 class="form-control" %}
+      <div class="text-danger">{{ form.password2.errors }}</div>
+    </div>
+
+    <!-- Terms -->
+    <div class="mb-3 form-check">
+      {% render_field form.agree_to_terms class="form-check-input" %}
+      <label class="form-check-label" for="{{ form.agree_to_terms.id_for_label }}">
+        I agree to the <a href="{% url 'terms' %}" target="_blank">Terms of Use</a> and
+        <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a>.
+      </label>
+      <div class="text-danger">{{ form.agree_to_terms.errors }}</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+    <p class="mt-3 text-center">
+      Already have an account? <a href="{% url 'student_login' %}">Login</a>
+    </p>
+  </form>
+</div>
+
+<style>
+.text-green-700 { color: #15803d; font-weight: 500; }
+.text-red-700 { color: #b91c1c; font-weight: 500; }
+.text-orange-600 { color: #d97706; font-weight: 500; }
+.text-gray-600 { color: #4b5563; font-style: italic; }
+.animate-pulse { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const idTypeRadios = document.querySelectorAll('input[name="id_type"]');
+  const idSection = document.getElementById('idSection');
+  const nemisSection = document.getElementById('nemisSection');
+  const idInput = document.getElementById('id_id_number');
+  const verifyBtn = document.getElementById('verify-id-btn');
+  const guardianInput = document.getElementById('id_guardian_id_number');
+  const guardianBtn = document.getElementById('verify-guardian-id-btn');
+  const feedback = document.getElementById('id-verification-feedback');
+  const guardianFeedback = document.getElementById('guardian-id-feedback');
+  const signupForm = document.getElementById('student-signup-form');
+  const firstNameInput = document.getElementById('id_first_name');
+  const lastNameInput = document.getElementById('id_last_name');
+  const guardianFirstName = document.getElementById('guardian_first_name');
+  const guardianLastName = document.getElementById('guardian_last_name');
+
+  let idVerified = false;
+  let guardianVerified = false;
+
+  // ✅ Clear related fields when switching between ID/NEMIS
+  idTypeRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+      const checkedValue = this.value;
+      // Reset input values
+      idInput.value = "";
+      guardianInput.value = "";
+      document.getElementById('id_nemis_number').value = "";
+      guardianFirstName.value = "";
+      guardianLastName.value = "";
+      // Reset flags
+      document.getElementById('id_verified_flag').value = 'false';
+      document.getElementById('guardian_verified_flag').value = 'false';
+      idVerified = false;
+      guardianVerified = false;
+      // Clear feedback
+      feedback.textContent = "";
+      guardianFeedback.textContent = "";
+      // Toggle sections
+      idSection.style.display = (checkedValue === 'id') ? '' : 'none';
+      nemisSection.style.display = (checkedValue === 'nemis') ? '' : 'none';
+    });
+  });
+
+  function toggleSections() {
+    const checked = document.querySelector('input[name="id_type"]:checked');
+    if (!checked) return;
+    idSection.style.display = (checked.value === 'id') ? '' : 'none';
+    nemisSection.style.display = (checked.value === 'nemis') ? '' : 'none';
+  }
+  toggleSections();
+
+  function verifyIdentity(inputField, feedbackField, button, flagType) {
+    const idNumber = inputField.value.trim();
+    let firstName, lastName;
+
+    if (flagType === 'id') {
+      firstName = firstNameInput.value.trim();
+      lastName = lastNameInput.value.trim();
+    } else {
+      firstName = guardianFirstName.value.trim();
+      lastName = guardianLastName.value.trim();
+    }
+
+    if (!idNumber) {
+      feedbackField.textContent = "Please enter the ID number first.";
+      feedbackField.className = "text-red-700";
+      return;
+    }
+
+    if (!firstName || !lastName) {
+      feedbackField.textContent = "Please enter the required first and last names before verifying.";
+      feedbackField.className = "text-red-700";
+      return;
+    }
+
+    feedbackField.textContent = "Verifying ID, please wait...";
+    feedbackField.className = "text-gray-600 animate-pulse";
+    button.disabled = true;
+    inputField.disabled = true;
+
+    fetch("{% url 'verify_identity_ajax' %}", {
+      method: "POST",
+      headers: { "X-CSRFToken": csrftoken, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        id_type: flagType,
+        id_number: idNumber,
+        first_name: firstName,
+        last_name: lastName,
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      button.disabled = false;
+      inputField.disabled = false;
+      if (data.valid) {
+        feedbackField.innerHTML = `✅ ${data.message}`;
+        feedbackField.className = "text-green-700";
+        if (flagType === 'id') {
+          idVerified = true;
+          document.getElementById('id_verified_flag').value = 'true';
+        } else {
+          guardianVerified = true;
+          document.getElementById('guardian_verified_flag').value = 'true';
+        }
+      } else {
+        feedbackField.textContent = `❌ ${data.message || "Verification failed."}`;
+        feedbackField.className = "text-red-700";
+      }
+    })
+    .catch(() => {
+      button.disabled = false;
+      inputField.disabled = false;
+      feedbackField.textContent = "⚠️ Network error during verification.";
+      feedbackField.className = "text-orange-600";
+    });
+  }
+
+  verifyBtn?.addEventListener('click', e => {
+    e.preventDefault();
+    verifyIdentity(idInput, feedback, verifyBtn, 'id');
+  });
+
+  guardianBtn?.addEventListener('click', e => {
+    e.preventDefault();
+    verifyIdentity(guardianInput, guardianFeedback, guardianBtn, 'guardian');
+  });
+
+  // ✅ FORM SUBMIT VALIDATION
+  signupForm.addEventListener('submit', function(e) {
+    const checked = document.querySelector('input[name="id_type"]:checked');
+    if (checked?.value === 'id' && !idVerified) {
+      e.preventDefault();
+      feedback.textContent = "⚠️ Please verify your ID before signing up.";
+      feedback.className = "text-orange-600";
+    }
+    if (checked?.value === 'nemis' && !guardianVerified) {
+      e.preventDefault();
+      guardianFeedback.textContent = "⚠️ Please verify your guardian's ID before signing up.";
+      guardianFeedback.className = "text-orange-600";
+    }
+  });
+});
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

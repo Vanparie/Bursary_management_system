@@ -1,0 +1,9 @@
+<!-- bursary/templates/bursary/upgrade_to_id.html -->
+<h2>Upgrade Account</h2>
+<p>Enter your National ID to replace your NEMIS login.</p>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Upgrade</button>
+</form>

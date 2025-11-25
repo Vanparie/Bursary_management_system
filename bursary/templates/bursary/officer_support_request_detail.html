@@ -1,0 +1,87 @@
+{% extends 'bursary/officer_base.html' %}
+
+{% block content %}
+<h2>Support Request: {{ support_request.subject }}</h2>
+
+<!-- Student Details -->
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h4 class="card-title">Student Details</h4>
+        <ul>
+            <li><strong>Full Name:</strong> {{ student.user.get_full_name }}</li>
+            <li><strong>Admission No:</strong> {{ student.admission_number }}</li>
+            <li><strong>Email:</strong> {{ student.email }}</li>
+            <li><strong>National ID:</strong> {{ student.id_number }}</li>
+            <li><strong>NEMIS:</strong> {{ student.nemis_number }}</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Student Message -->
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h4 class="card-title">Student Message</h4>
+        <p class="p-3 border rounded bg-light">{{ support_request.message }}</p>
+    </div>
+</div>
+
+<!-- Last Application -->
+{% if application %}
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h4 class="card-title">Last Bursary Application</h4>
+        <ul>
+            <li><strong>Status:</strong> {{ application.status }}</li>
+            <li><strong>Submitted at:</strong>
+                {% if application.date_applied %}
+                    {{ application.date_applied|date:"M d, Y, h:i a" }}
+                {% else %}
+                    <em class="text-muted">N/A</em>
+                {% endif %}
+            </li>
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<!-- Officer Action -->
+{% if support_request.resolved %}
+<div class="card shadow-sm mb-3 border-success">
+    <div class="card-body">
+        <h4 class="card-title text-success">✅ Request Resolved</h4>
+        <p><strong>Officer Feedback:</strong></p>
+        <p class="p-3 border rounded bg-light">{{ support_request.officer_action }}</p>
+    </div>
+</div>
+<a href="{% url 'officer_support_requests' %}" class="btn btn-secondary">Back</a>
+{% else %}
+<form method="post" class="card shadow-sm p-3">
+    {% csrf_token %}
+    <div class="mb-3">
+        <!-- 🔑 Updated label -->
+        <label for="action" class="form-label fw-bold">Officer Feedback / Notes</label>
+        <textarea name="action" id="action" class="form-control" rows="4" required>{{ support_request.officer_action }}</textarea>
+    </div>
+
+    {% if application %}
+    <div class="form-check mb-3 p-2 border border-danger rounded bg-light">
+        <input type="checkbox" name="allow_reapply" class="form-check-input" id="allowReapply" style="transform: scale(1.3); margin-right:8px;">
+        <label class="form-check-label fw-bold text-danger" for="allowReapply">
+            ⚠️ Allow student to reapply (delete previous application)
+        </label>
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-success">Mark as Resolved</button>
+    <a href="{% url 'officer_support_requests' %}" class="btn btn-secondary">Back</a>
+</form>
+{% endif %}
+
+{% endblock %}
+
+
+
+
+
+
+

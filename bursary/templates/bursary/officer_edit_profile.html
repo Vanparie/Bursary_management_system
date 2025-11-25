@@ -1,0 +1,105 @@
+{% extends 'bursary/officer_base.html' %}
+{% load static %}
+
+{% block title %}Edit Officer Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="fw-bold mb-4 text-center">👤 Edit Profile</h2>
+
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 650px;">
+        <div class="card-body">
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Profile Picture Preview & Click-to-Upload -->
+                <div class="text-center mb-3">
+                    <label for="id_profile_pic" style="cursor:pointer;">
+                        {% if officer.profile_pic %}
+                            <img id="profile-pic-preview" src="{{ officer.profile_pic.url }}"
+                                 alt="Profile Picture"
+                                 class="rounded-circle shadow-sm border mb-2"
+                                 width="130" height="130"
+                                 style="object-fit: cover;">
+                        {% else %}
+                            <img id="profile-pic-preview" src="{% static 'default_profile.png' %}"
+                                 alt="Profile Picture"
+                                 class="rounded-circle shadow-sm border mb-2"
+                                 width="130" height="130"
+                                 style="object-fit: cover;">
+                        {% endif %}
+                    </label>
+
+                    <!-- file input (rendered by form.widget) -->
+                    <div class="mt-2">
+                        {{ form.profile_pic }}
+                        {% if form.profile_pic.errors %}
+                            <div class="text-danger small">{{ form.profile_pic.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Full Name -->
+                <h4 class="text-center mb-4">{{ officer.user.get_full_name|default:officer.user.username }}</h4>
+
+                <!-- Email -->
+                <div class="mb-3 row">
+                    <label for="{{ form.email.id_for_label }}" class="col-sm-4 col-form-label fw-bold">📧 Email:</label>
+                    <div class="col-sm-8">
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Phone -->
+                <div class="mb-3 row">
+                    <label for="{{ form.phone.id_for_label }}" class="col-sm-4 col-form-label fw-bold">📱 Phone:</label>
+                    <div class="col-sm-8">
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <div class="text-danger small">{{ form.phone.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary me-2">Update</button>
+                    <a href="{% url 'officer_profile' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<!-- JS for live profile picture preview -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("id_profile_pic");
+    if (input) {
+        input.addEventListener("change", function(event) {
+            const [file] = event.target.files;
+            if (file) {
+                const preview = document.getElementById("profile-pic-preview");
+                preview.src = URL.createObjectURL(file);
+            }
+        });
+    }
+});
+</script>
+
+<!-- Hide the default file input so label (image) triggers click -->
+<style>
+input[type="file"]#id_profile_pic {
+    display: none;
+}
+</style>
+{% endblock %}
+
+
+
+

@@ -1,0 +1,343 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Bursary Management System{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            background-color: #f9fafb;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #2C3E50;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ✅ Branding bar */
+        .branding-bar {
+            background-color: #183A72; /* Samburu West Primary Blue */
+            color: #fff;
+            padding: 15px;
+            border-bottom: 4px solid #C0392B; /* Accent underline */
+            text-align: center;
+        }
+
+        .branding-bar img {
+            max-height: 60px;
+            margin-right: 10px;
+        }
+
+        .branding-bar h4 {
+            margin: 0;
+            font-weight: bold;
+        }
+
+        /* ✅ Navbar */
+        nav.navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1050;
+            background-color: #7B241C !important; /* Deep Maroon */
+        }
+
+        nav.navbar .navbar-brand {
+            font-weight: bold;
+            color: #fff !important;
+        }
+
+        nav.navbar .nav-link {
+            font-weight: 500;
+            color: #fff !important;
+            transition: 0.3s ease-in-out;
+        }
+
+        nav.navbar .nav-link:hover {
+            color: #FFD700 !important; /* Golden hover highlight */
+        }
+
+        nav .btn-link {
+            padding-left: 0;
+        }
+
+        /* ✅ Quick Navigation (Preview Page) */
+        #previewNav .nav-link,
+        #mobileNav .nav-link {
+            color: #183A72 !important;   /* Primary blue */
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        #previewNav .nav-link:hover,
+        #mobileNav .nav-link:hover {
+            color: #C0392B !important;   /* Accent maroon */
+            text-decoration: underline;
+        }
+
+        /* ✅ Buttons */
+        nav .btn-outline-primary {
+            border-color: #C0392B;
+            color: #C0392B;
+        }
+
+        nav .btn-outline-primary:hover {
+            background-color: #C0392B;
+            color: #fff;
+        }
+
+        /* ✅ Flash messages */
+        #messages .alert {
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            font-size: 0.95rem;
+        }
+
+        /* ✅ Deadline ticker */
+        .deadline-ticker-wrapper {
+            overflow: hidden;
+            background: #ffe8cc;
+            border: 1px solid #f0ad4e;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 20px auto;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .deadline-ticker {
+            white-space: nowrap;
+            display: inline-block;
+            animation: scroll-left 15s linear infinite;
+            color: #7B241C; /* Deep Maroon */
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        @keyframes scroll-left {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* ✅ Footer */
+        footer {
+            background: #183A72; /* Primary Blue */
+            color: #fff;
+            padding: 15px 0;
+            text-align: center;
+            margin-top: auto;
+            border-top: 4px solid #C0392B; /* Accent underline */
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* ✅ Mobile tweaks & Navbar improvements */
+        @media (max-width: 768px) {
+            /* Branding bar smaller */
+            .branding-bar h4 {
+                font-size: 1.2rem;
+            }
+
+            /* Navbar links */
+            nav .navbar-nav {
+                text-align: left; /* better alignment for mobile */
+            }
+
+            nav .nav-item {
+                margin: 6px 0; /* extra spacing for touch targets */
+            }
+
+            nav .nav-link {
+                padding: 10px 15px;
+                font-size: 0.95rem;
+            }
+
+            /* Officer info smaller on mobile and wrapped */
+            nav .nav-link.disabled {
+                font-size: 0.85rem;
+                white-space: normal;
+            }
+
+            /* Dropdowns full width for easier tapping */
+            nav .dropdown-menu {
+                width: 100%;
+                left: 0;
+                right: 0;
+            }
+
+            /* Support badge spacing */
+            .navbar-nav .position-relative .badge {
+                top: 0.25rem;
+                right: 0.5rem;
+                transform: translate(0, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Branding Bar -->
+<div class="branding-bar d-flex align-items-center justify-content-center flex-wrap">
+    {% comment %}
+        `branding` is provided by context processor as a dict:
+        {"name": "...", "logo": "<url or None>"}
+    {% endcomment %}
+    {% if branding %}
+        {% if branding.logo %}
+            <img src="{{ branding.logo }}" alt="{{ branding.name }}">
+        {% endif %}
+        <h4>{{ branding.name }}</h4>
+    {% else %}
+        <h4>BursaryFlow – Samburu West</h4>
+    {% endif %}
+</div>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <div class="container-fluid">
+        <!-- Branding -->
+        <a class="navbar-brand fw-bold" href="{% url 'landing_page' %}">BursaryFlow</a>
+
+        <!-- Toggler for mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navbar links -->
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+
+                {% if not user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'landing_page' %}">Home</a></li>
+
+                    <!-- Login Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown">
+                            Login
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="loginDropdown">
+                            <li><a class="dropdown-item" href="{% url 'student_login' %}">Student Login</a></li>
+                            <li><a class="dropdown-item" href="{% url 'officer_login' %}">Officer Login</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item"><a class="nav-link" href="{% url 'student_signup' %}">Register</a></li>
+
+                {% else %}
+                    {% if user.is_staff and not user.is_superuser %}
+                        {% if officer %}
+                            <li class="nav-item">
+                                <span class="nav-link disabled text-light small">
+                                    📍 {{ officer.constituency.name }} | {{ officer.get_bursary_type_display }}
+                                </span>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'officer_dashboard' %}">Officer Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'officer_logs' %}">📜 Activity Logs</a></li>
+
+                    {% elif user.is_superuser %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
+
+                    {% else %}
+                        <!-- Student links -->
+                        <li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'apply_bursary' %}">Apply</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'application_preview' %}">Preview</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'student_profile' %}">My Profile</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'contact_support' %}">Contact Support</a></li>
+
+                        <!-- Support Requests with badge -->
+                        <li class="nav-item position-relative">
+                            <a class="nav-link" href="{% url 'student_support_requests' %}">
+                                My Support Requests
+                                {% if student_support_feedback_count %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        {{ student_support_feedback_count }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Logout -->
+                    <li class="nav-item">
+                        <form method="POST" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link nav-link text-white p-0">Logout</button>
+                        </form>
+                    </li>
+                {% endif %}
+
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Flash Messages -->
+{% if messages %}
+<div class="container mt-3" id="messages">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+</div>
+<script>
+    setTimeout(function() {
+        const messagesDiv = document.getElementById("messages");
+        if (messagesDiv) messagesDiv.style.display = 'none';
+    }, 5000);
+</script>
+{% endif %}
+
+<!-- Main Content -->
+<main class="container py-4">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer>
+    <p>© {% now "Y" %} BursaryFlow | Samburu West | All Rights Reserved.</p>
+    <a href="{% url 'privacy' %}" class="text-white">Privacy Policy</a> | 
+    <a href="{% url 'terms' %}" class="text-white">Terms of Use</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
