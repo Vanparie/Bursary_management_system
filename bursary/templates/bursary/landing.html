@@ -3,29 +3,76 @@
 {% block title %}Welcome to the Bursary System{% endblock %}
 
 {% block content %}
+
+<!-- ================= HERO BANNER ================= -->
+{% if banners %}
+<section class="hero-banner position-relative mb-5" style="height: 400px; overflow: hidden;">
+    <img src="{{ banners.0.image.url }}" 
+         class="w-100 h-100 object-fit-cover" 
+         alt="{{ banners.0.title }}">
+    <div class="banner-overlay position-absolute top-0 start-0 w-100 h-100 
+                d-flex flex-column justify-content-center align-items-start 
+                px-5" 
+         style="background: rgba(0,0,0,0.45);">
+        {% if banners.0.title %}
+        <h1 class="text-white fw-bold display-5">{{ banners.0.title }}</h1>
+        {% endif %}
+        {% if banners.0.caption %}
+        <p class="text-light fs-5 mt-2">{{ banners.0.caption }}</p>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+
+<!-- ================= SITE INTRO / CTA ================= -->
 <div class="container py-5 text-center">
     {% if site_profile.logo %}
       <img src="{{ site_profile.logo.url }}" alt="Site Logo" class="img-fluid mb-4" style="max-height: 120px;">
     {% endif %}
-
     <h1 class="display-5 fw-bold mb-3">Welcome to the Bursary Management System</h1>
-    <p class="lead mb-4">A trusted platform for students to apply and track bursary applications across {{site_profile}}</p>
-
+    <p class="lead mb-4">A trusted platform for students to apply and track bursary applications across {{ site_profile }}</p>
     <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-4">
         <a href="{% url 'student_login' %}" class="btn btn-primary btn-lg">Apply for Bursary</a>
     </div>
 
-   <!-- Deadline Ticker -->
-   {% if site_profile and site_profile.application_deadline %}
-   <div class="deadline-ticker-wrapper">
+    {% if site_profile and site_profile.application_deadline %}
+    <div class="deadline-ticker-wrapper">
        <div class="deadline-ticker">
            📢 Application Deadline: {{ site_profile.application_deadline|date:"F j, Y" }} – Submit your application on time!
        </div>
-   </div>
-   {% endif %}
+    </div>
+    {% endif %}
 </div>
 
-<!-- ✅ Carousel for Slides -->
+
+<!-- ================= ANNOUNCEMENTS ================= -->
+{% if announcements %}
+<section class="container my-5">
+    <h2 class="fw-bold mb-4 text-primary">Announcements</h2>
+    <div class="row g-4">
+        {% for ann in announcements %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100 border-0">
+                {% if ann.image %}
+                <img src="{{ ann.image.url }}" class="card-img-top" alt="{{ ann.title }}" style="height:180px; object-fit:cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ ann.title }}</h5>
+                    <p class="card-text text-muted">{{ ann.message }}</p>
+                    <p class="text-secondary small mt-2">📅 {{ ann.created_at|date:"M d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No announcements available.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+
+<!-- ================= LANDING SLIDES CAROUSEL ================= -->
 {% if slides %}
 <div id="landingCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
   <div class="carousel-inner">
@@ -56,12 +103,12 @@
 </div>
 {% endif %}
 
-<!-- ✅ Unified Impact & Benefits Section -->
+
+<!-- ================= IMPACT & BENEFITS ================= -->
 <div class="container my-5">
     <h2 class="text-center mb-4">Our Impact & Benefits</h2>
     <div class="row g-4">
 
-        <!-- Impact Stats -->
         {% if stats %}
         <div class="col-md-4">
             <div class="border p-4 h-100 rounded shadow-sm text-center bg-light">
@@ -70,7 +117,7 @@
                          alt="Students Benefited" class="img-fluid" style="max-height:80px;">
                 </div>
                 <h2 class="fw-bold text-primary">{{ stats.students|default:"0" }}</h2>
-                <p class="mb-0">🎓 Students Benefited</p>
+                <p class="mb-0"> Students Benefited</p>
             </div>
         </div>
 
@@ -81,7 +128,7 @@
                          alt="Funds Disbursed" class="img-fluid" style="max-height:80px;">
                 </div>
                 <h2 class="fw-bold text-success">Ksh {{ stats.funds|default:"0" }}</h2>
-                <p class="mb-0">💰 Total Funds Disbursed</p>
+                <p class="mb-0"> Total Funds Disbursed</p>
             </div>
         </div>
 
@@ -106,7 +153,7 @@
                   <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" 
                        alt="Simple Application" class="img-fluid" style="max-height:80px;">
                 </div>
-                <h4 class="fw-bold">📄 Simple Application</h4>
+                <h4 class="fw-bold"> Simple Application</h4>
                 <p>Apply online in minutes. Upload required documents with ease.</p>
             </div>
         </div>
@@ -117,7 +164,7 @@
                   <img src="https://cdn-icons-png.flaticon.com/512/1828/1828640.png" 
                        alt="Transparent Process" class="img-fluid" style="max-height:80px;">
                 </div>
-                <h4 class="fw-bold">✅ Transparent Process</h4>
+                <h4 class="fw-bold"> Transparent Process</h4>
                 <p>Track your application status and get real-time updates.</p>
             </div>
         </div>
@@ -128,14 +175,15 @@
                   <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" 
                        alt="Secure & Reliable" class="img-fluid" style="max-height:80px;">
                 </div>
-                <h4 class="fw-bold">🔒 Secure & Reliable</h4>
+                <h4 class="fw-bold"> Secure & Reliable</h4>
                 <p>Your data is protected with industry-standard security protocols.</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ✅ Success Stories Carousel (Fade Transition) -->
+
+<!-- ================= SUCCESS STORIES ================= -->
 {% if success_stories %}
 <div class="container my-5">
     <h2 class="text-center mb-4">Success Stories</h2>
@@ -175,7 +223,8 @@
 </div>
 {% endif %}
 
-<!-- ✅ How It Works Section -->
+
+<!-- ================= HOW IT WORKS ================= -->
 <div class="container mt-5 mb-5 bg-light rounded p-4 text-center">
     <h2 class="mb-3">How It Works</h2>
     <ol class="list-group list-group-numbered mx-auto" style="max-width: 600px; text-align: left;">
@@ -188,12 +237,14 @@
     </ol>
 </div>
 
-<!-- ✅ Extra CTA Section -->
+
+<!-- ================= EXTRA CTA ================= -->
 <div class="text-center my-5">
     <a href="{% url 'student_login' %}" class="btn btn-outline-dark btn-lg">Already have an account? Login</a>
 </div>
 
 {% endblock %}
+
 
 
 
