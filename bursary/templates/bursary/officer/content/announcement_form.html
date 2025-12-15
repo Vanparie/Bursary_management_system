@@ -1,0 +1,35 @@
+{% extends "bursary/officer_base.html" %}
+{% block title %}{{ title }} Announcement{% endblock %}
+{% block content %}
+
+<h4>{{ title }} Announcement</h4>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+        {{ form.title.label_tag }} {{ form.title }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.message.label_tag }} {{ form.message }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.image.label_tag }} {{ form.image }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.pinned }} {{ form.pinned.label_tag }}
+    </div>
+
+    <div class="mb-3 form-check">
+        {{ form.is_active }} {{ form.is_active.label_tag }}
+    </div>
+
+    <button class="btn btn-primary">Save</button>
+    <a class="btn btn-secondary" href="{% url 'officer_announcements' %}">Cancel</a>
+</form>
+
+{% endblock %}
+

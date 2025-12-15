@@ -1,0 +1,26 @@
+{% extends "bursary/officer_base.html" %}
+{% block title %}{{ action }} Banner{% endblock %}
+{% block content %}
+<h4>{{ action }} Banner</h4>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="mb-3">
+      {{ form.image.label_tag }} {{ form.image }}
+    </div>
+    <div class="mb-3">
+      {{ form.title.label_tag }} {{ form.title }}
+    </div>
+    <div class="mb-3">
+      {{ form.caption.label_tag }} {{ form.caption }}
+    </div>
+    <div class="mb-3">
+      {{ form.order.label_tag }} {{ form.order }}
+    </div>
+    <div class="mb-3 form-check">
+      {{ form.is_active }} {{ form.is_active.label_tag }}
+    </div>
+    <button class="btn btn-primary">{{ action }}</button>
+    <a class="btn btn-secondary" href="{% url 'officer_banners' %}">Cancel</a>
+</form>
+{% endblock %}

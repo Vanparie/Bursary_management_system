@@ -1,0 +1,11 @@
+{% extends "bursary/officer_base.html" %}
+{% block title %}Confirm Delete{% endblock %}
+{% block content %}
+<h4>Confirm Delete</h4>
+<p>Are you sure you want to delete "<strong>{{ obj }}</strong>"?</p>
+<form method="post">
+  {% csrf_token %}
+  <button class="btn btn-danger" type="submit">Yes, delete</button>
+  <a class="btn btn-secondary" href="{{ cancel }}">Cancel</a>
+</form>
+{% endblock %}
