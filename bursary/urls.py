@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 from django.contrib.auth import views as auth_views
 from .views import (
@@ -15,6 +15,7 @@ urlpatterns = [
     path('', views.landing_page, name='landing_page'),
     #path("showcase/", views.LandingContent, name="landing_content"),
     path('no-access/', views.no_access_view, name='no_access'),
+    path('', views.home, name ='home'),
 
     # Student section
     #path('signup/', views.signup_view, name='signup'),
@@ -64,7 +65,7 @@ urlpatterns = [
     path('support-requests/<int:pk>/resolve/', views.resolve_support_request, name='resolve_support_request'),
     path('officer/applications/download/status/<str:status>/', views.download_applications_by_status, name='download_applications_by_status'),
     path('officer/application/<int:pk>/download/', views.download_single_application, name='download_single_application'),
-
+    path("officer/", include("bursary.urls_officer_content")),
 
     # Admin section
     #path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
