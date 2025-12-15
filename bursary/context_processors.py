@@ -1,4 +1,3 @@
-# bursary/context_processors.py
 from django.core.cache import cache
 from .models import SiteProfile, SupportRequest, Student
 import logging
@@ -15,20 +14,31 @@ def site_branding(request):
         branding = cache.get("active_branding")
         if not branding:
             site = (
-                SiteProfile.objects.only("id", "branding_name", "branding_logo", "is_active")
+                SiteProfile.objects.only("id", "branding_name", "branding_logo", "is_active",
+                "county", "constituency")
                 .filter(is_active=True)
                 .first()
-                or SiteProfile.objects.only("id", "branding_name", "branding_logo").first()
+                or SiteProfile.objects.only("id", "branding_name", "branding_logo", "county", "constituency").first()
             )
+
+             # Determine region name dynamically
+            region = None
+            if site:
+                if getattr(site, "constituency", None):
+                    region = site.constituency.name
+                elif getattr(site, "county", None):
+                    region = site.county.name
+
             branding = {
                 "name": site.branding_name if site else "BursaryFlow",
                 "logo": site.branding_logo.url if site and site.branding_logo else None,
+                "region": region or "Your Region",
             }
             cache.set("active_branding", branding, 300)
         return {"branding": branding}
     except Exception as e:
         logger.error(f"Error in site_branding context processor: {e}")
-        return {"branding": {"name": "BursaryFlow", "logo": None}}
+        return {"branding": {"name": "BursaryFlow", "logo": None, "region": "Your Region"}}
 
 
 def officer_context(request):
