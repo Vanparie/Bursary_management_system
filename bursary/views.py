@@ -25,7 +25,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.db import models as dj_models  # if you need alias for Count/Sum etc (optional)
+from django.db import models as dj_models  # alias for Count/Sum etc 
 from django.db.models import (
     Q, Sum, Count, Value, DecimalField, OuterRef, Subquery
 )
@@ -38,7 +38,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt  # keep only if used; not recommended for production
+from django.views.decorators.csrf import csrf_exempt  # not recommended for production
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.staticfiles import finders
 from django.shortcuts import render, redirect
@@ -57,13 +57,15 @@ from .email_utils import send_application_email
 from .models import (
     Student, Guardian, Sibling, BursaryApplication, SupportingDocument,
     SiteProfile, OfficerProfile, Constituency, Ward, OfficerActivityLog,
-    SupportRequest, LandingSlide, SuccessStory
+    SupportRequest, LandingSlide, SuccessStory, Banner, Announcement
 )
 
 from functools import wraps
 from decimal import Decimal, InvalidOperation
 from django.http import HttpResponse, Http404
 from django.db.models import Sum
+
+from bursary.officer.decorators import manager_required, officer_required, officer_required_can_manage_content
 
 
 # Notes:
@@ -78,8 +80,8 @@ from django.db.models import Sum
 # ========================
 def home(request):
     """Landing page with active branding."""
-    branding = SiteProfile.get_active()
-    return render(request, "base.html", {"branding": branding})
+    site_profile = SiteProfile.get_active()
+    return render(request, "landing.html", {"site_profile": site_profile})
 
 
 from django.shortcuts import render
@@ -361,9 +363,9 @@ def student_login_view(request):
                 # ✨ ENFORCE SITE PROFILE MATCH
                 if site:
                     if site.county and student.county != site.county:
-                        return redirect('no_access')
+                        return redirect('student_no_access')
                     if site.constituency and student.constituency != site.constituency:
-                        return redirect('no_access')
+                        return redirect('student_no_access')
 
                 login(request, user)
                 return redirect("student_dashboard")
@@ -428,22 +430,31 @@ def change_password(request):
 
     return render(request, "bursary/change_password.html", {"form": form})
 
-
 # ========================
-# Landing Page View
+# Landing page
 # ========================
 
 def landing_page(request):
-    # ✅ Get branding profile (county or constituency)
-    site_profile = SiteProfile.objects.only(
-        "id", "bursary_type", "county", "constituency", "application_deadline"
-    ).first()
+    # Active site
+    site_profile = SiteProfile.get_active()
 
-    # ✅ Get landing content
-    slides = LandingSlide.objects.filter(is_active=True).order_by("order")
-    success_stories = SuccessStory.objects.filter(is_active=True).order_by("order")
+    # Slides
+    slides = LandingSlide.objects.filter(is_active=True)
+    # Success stories
+    success_stories = SuccessStory.objects.filter(is_active=True)
+    # Banners
+    banners = Banner.objects.filter(is_active=True)
+    # Announcements
+    announcements = Announcement.objects.filter(is_active=True)
 
-    # ✅ Calculate impact stats
+    # Filter by active site
+    if site_profile:
+        slides = slides.filter(site_profile=site_profile).order_by("order")
+        success_stories = success_stories.filter(site_profile=site_profile).order_by("order")
+        banners = banners.filter(site_profile=site_profile).order_by("order")
+        announcements = announcements.filter(site_profile=site_profile).order_by("-created_at")
+
+    # Stats
     total_students = BursaryApplication.objects.count()
     total_funds = (
         BursaryApplication.objects.aggregate(total=Sum("amount_awarded"))["total"] or 0
@@ -455,7 +466,6 @@ def landing_page(request):
         bursary_type = site_profile.bursary_type.lower()
 
         if bursary_type == "county" and site_profile.county:
-            # County-level bursary → count constituencies in this county
             coverage_count = (
                 BursaryApplication.objects.filter(
                     constituency__county=site_profile.county
@@ -467,7 +477,6 @@ def landing_page(request):
             coverage_label = "📍 Constituencies Covered"
 
         elif bursary_type == "constituency" and site_profile.constituency:
-            # Constituency-level bursary → count wards in this constituency
             coverage_count = (
                 BursaryApplication.objects.filter(
                     constituency=site_profile.constituency
@@ -478,7 +487,6 @@ def landing_page(request):
             )
             coverage_label = "📍 Wards Covered"
 
-    # ✅ Package stats
     stats = {
         "students": total_students,
         "funds": total_funds,
@@ -486,7 +494,6 @@ def landing_page(request):
         "coverage_label": coverage_label,
     }
 
-    # ✅ Render template with everything
     return render(
         request,
         "bursary/landing.html",
@@ -494,6 +501,8 @@ def landing_page(request):
             "site_profile": site_profile,
             "slides": slides,
             "success_stories": success_stories,
+            "banners": banners,
+            "announcements": announcements,
             "stats": stats,
         },
     )
@@ -503,6 +512,7 @@ def landing_page(request):
 # Officer Dashboard (Application List and Stats)
 # ========================
 @login_required
+@officer_required
 def officer_dashboard(request):
     try:
         officer = request.user.officer_profile
@@ -517,7 +527,7 @@ def officer_dashboard(request):
     status_filter = request.GET.get('status', '')
     ward_filter = request.GET.get('ward', '')
 
-    # ✅ preload related objects, avoid N+1 queries
+    # preload related objects, avoid N+1 queries
     applications = (
         BursaryApplication.objects
         .select_related('student', 'constituency', 'ward')
@@ -530,7 +540,7 @@ def officer_dashboard(request):
     if status_filter:
         applications = applications.filter(status=status_filter)
 
-    # ✅ compute aggregates efficiently
+    # compute aggregates efficiently
     aggregate_data = applications.aggregate(
         total_requested=Sum("amount_requested"),
         total_approved=Sum("amount_awarded", filter=Q(status="approved")),
@@ -690,6 +700,7 @@ def application_preview(request):
 # Applications Page (List + Filters + Pagination)
 # ========================
 @login_required
+@officer_required
 def officer_applications(request):
     applications = (
         BursaryApplication.objects
@@ -1080,35 +1091,27 @@ class OfficerLoginView(LoginView):
 
     def form_valid(self, form):
         user = form.get_user()
-        site = getattr(self.request, 'site_profile', None)  # active site profile
 
+        # Ensure the user has an officer profile
         try:
             officer_profile = user.officer_profile
         except OfficerProfile.DoesNotExist:
             messages.error(self.request, "You are not authorized to log in here.")
             return self.form_invalid(form)
 
+        # Ensure the officer is active
         if not officer_profile.is_active:
             messages.error(self.request, "Your officer account is inactive. Contact admin.")
             return self.form_invalid(form)
 
-        # ✨ ENFORCE SITE PROFILE MATCH
-        if site:
-            # Constituency site
-            if site.constituency:
-                if officer_profile.constituency != site.constituency:
-                    return redirect('no_access')
-
-            # County site
-            if site.county:
-                # Officer with constituency = check county
-                if officer_profile.constituency:
-                    if officer_profile.constituency.county != site.county:
-                        return redirect('no_access')
-
+        # Login the user
         login(self.request, user)
+
+        # Log the login action
         log_officer_action(officer_profile, "login", "Officer logged in")
-        return redirect("officer_dashboard")
+
+        # Redirect to dashboard (or default success URL)
+        return super().form_valid(form)
 
 
 
@@ -1116,6 +1119,7 @@ class OfficerLoginView(LoginView):
 # Officer Profile (View & Edit)
 # ========================
 @login_required
+@officer_required
 def officer_profile_view(request):
     """Read-only officer profile page."""
     try:
@@ -1423,18 +1427,26 @@ def add_officer(request):
         profile_form = OfficerProfileForm(request.POST, request.FILES)
 
         if user_form.is_valid() and profile_form.is_valid():
+            # ===== Create User =====
             user = user_form.save(commit=False)
             user.set_password(user_form.cleaned_data["password"])
             user.is_active = True
             user.save()
 
+            # ===== Create OfficerProfile =====
             officer_profile = profile_form.save(commit=False)
             officer_profile.user = user
             officer_profile.constituency = manager_profile.constituency
             officer_profile.county = getattr(manager_profile.constituency, "county", None)
             officer_profile.bursary_type = manager_profile.bursary_type
+            officer_profile.can_manage_content = profile_form.cleaned_data.get('can_manage_content', False)
+
+            # ===== Auto-assign site profile from manager =====
+            officer_profile.site_profile = manager_profile.site_profile
+
             officer_profile.save()
 
+            # ===== Log and notify =====
             log_officer_action(manager_profile, "add_officer", f"Added officer {user.username}")
             messages.success(request, f"✅ Officer {user.get_full_name()} added successfully.")
             return redirect("manage_officers")
@@ -1445,7 +1457,11 @@ def add_officer(request):
     return render(
         request,
         "bursary/add_officer.html",
-        {"user_form": user_form, "profile_form": profile_form, "manager_profile": manager_profile},
+        {
+            "user_form": user_form,
+            "profile_form": profile_form,
+            "manager_profile": manager_profile
+        },
     )
 
 
@@ -1515,6 +1531,7 @@ def delete_officer(request, officer_id):
 # Officer Logs
 # ========================
 @login_required
+@officer_required
 def officer_logs(request):
     officer = getattr(request.user, "officer_profile", None)
     if not officer:
@@ -1553,6 +1570,7 @@ def export_officer_logs(request):
 # Officer Reports
 # ========================
 @login_required
+@officer_required
 def officer_reports(request):
     officer = getattr(request.user, "officer_profile", None)
     if not officer:
@@ -1682,6 +1700,7 @@ def is_officer(user):
 
 @login_required
 @user_passes_test(is_officer)
+@officer_required
 def officer_support_requests_view(request):
     officer_profile = request.user.officer_profile
     query = request.GET.get("q", "").strip()
