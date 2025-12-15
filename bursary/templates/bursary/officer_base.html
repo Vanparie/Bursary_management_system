@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,9 +22,7 @@
             flex: 1;
         }
 
-        /* ==========================
-           SIDEBAR (branding applied)
-        ========================== */
+        /* Sidebar */
         .sidebar {
             background-color: #183A72;
             min-height: 100vh;
@@ -61,10 +60,11 @@
             color: #183A72;
             font-weight: bold;
         }
+        .sidebar .dropdown-toggle::after {
+            float: right;
+        }
 
-        /* ==========================
-           CARDS & CONTENT
-        ========================== */
+        /* Cards & content */
         .card {
             border: none;
             border-radius: 1rem;
@@ -75,9 +75,7 @@
             font-weight: 600;
         }
 
-        /* ==========================
-           FOOTER
-        ========================== */
+        /* Footer */
         .footer {
             background-color: #183A72;
             padding: 0.75rem 0;
@@ -86,9 +84,7 @@
             color: #fff;
         }
 
-        /* ==========================
-           RESPONSIVE FIXES
-        ========================== */
+        /* Responsive */
         @media (max-width: 767.98px) {
             .sidebar {
                 min-height: auto;
@@ -100,10 +96,10 @@
 <body>
 <div class="container-fluid flex-grow-1">
     <div class="row">
-        <!-- Sidebar (LEFT COLUMN) -->
+        <!-- Sidebar -->
         <nav id="officerSidebar" class="col-md-3 col-lg-2 d-md-block sidebar shadow-sm collapse show">
             <div class="p-3">
-                <h4 class="mb-4 fw-bold"> {{ branding.name|default:"BursaryFlow" }}</h4>
+                <h4 class="mb-4 fw-bold">{{ branding.name|default:"BursaryFlow" }}</h4>
                 <ul class="nav nav-pills flex-column mb-auto">
                     <li class="nav-item">
                         <a href="{% url 'officer_dashboard' %}"
@@ -124,6 +120,28 @@
                            class="nav-link {% if request.resolver_match.url_name == 'manage_officers' %}active{% endif %}">
                             👥 Officers
                         </a>
+                    </li>
+                    {% endif %}
+
+                    {% if officer.can_manage_content %}
+                    <li class="nav-item">
+                        <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#siteContentMenu" aria-expanded="false">
+                            🖼 Site Content
+                        </button>
+                        <ul class="collapse list-unstyled ps-3" id="siteContentMenu">
+                            <li>
+                                <a href="{% url 'officer_banners' %}" class="nav-link {% if request.resolver_match.url_name == 'officer_banners' %}active{% endif %}">Banners</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'officer_slides' %}" class="nav-link {% if request.resolver_match.url_name == 'officer_slides' %}active{% endif %}">Landing Slides</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'officer_success' %}" class="nav-link {% if request.resolver_match.url_name == 'officer_success' %}active{% endif %}">Success Stories</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'officer_announcements' %}" class="nav-link {% if request.resolver_match.url_name == 'officer_announcements' %}active{% endif %}">Announcements</a>
+                            </li>
+                        </ul>
                     </li>
                     {% endif %}
 
@@ -161,8 +179,6 @@
                     <div class="mt-auto small">
                         Signed in as <strong>{{ officer.user.get_full_name|default:officer.user.username }}</strong>
                     </div>
-
-                    <!-- Logout -->
                     <form method="POST" action="{% url 'logout' %}" class="mt-2">
                         {% csrf_token %}
                         <button class="btn btn-sm btn-outline-light w-100">🚪 Logout</button>
@@ -171,17 +187,14 @@
             </div>
         </nav>
 
-        <!-- Main Content (RIGHT COLUMN) -->
+        <!-- Main Content -->
         <main class="col-md-9 col-lg-10 ms-sm-auto px-md-4 py-4">
-
-            <!-- Sidebar toggle button for small screens -->
             <button class="btn btn-sm btn-outline-primary d-md-none mb-3" type="button"
                     data-bs-toggle="collapse" data-bs-target="#officerSidebar"
                     aria-controls="officerSidebar" aria-expanded="false" aria-label="Toggle navigation">
                 ☰ Menu
             </button>
 
-            <!-- ✅ Messages block -->
             {% if messages %}
               <div class="mb-3">
                 {% for message in messages %}
@@ -193,23 +206,20 @@
               </div>
             {% endif %}
 
-            {% block content %}
-            {% endblock %}
+            {% block content %}{% endblock %}
         </main>
     </div>
 </div>
 
-<!-- Footer -->
 <footer class="footer">
   <div class="container">
-    <span>© {% now "Y" %} BursaryFlow | Samburu West | All Rights Reserved.</span>
+    <span>© {% now "Y" %} BursaryFlow | {{ branding.region }} | All Rights Reserved.</span>
   </div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Auto-dismiss Bootstrap alerts after 3 seconds
-  document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     const alerts = document.querySelectorAll(".alert");
     alerts.forEach(function (alert) {
       setTimeout(function () {
@@ -217,11 +227,12 @@
         bsAlert.close();
       }, 3000);
     });
-  });
+});
 </script>
 
 </body>
 </html>
+
 
 
 
