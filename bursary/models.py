@@ -314,6 +314,21 @@ class OfficerProfile(models.Model):
     phone = models.CharField(max_length=20, blank=True, help_text="Officer's phone number (optional)")
     designation = models.CharField(max_length=50, blank=True, help_text="Position e.g. 'Clerk', 'Chairperson', etc.")
 
+    created_by = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={"is_manager": True},
+        related_name="officers_created",
+        help_text="Manager who created this officer"
+    )
+    
+    can_manage_content = models.BooleanField(
+        default=False,
+        help_text="Grant permission to manage slides, stories, banners, and branding"
+    )
+    
     def __str__(self):
         constituency_name = self.constituency.name if self.constituency else "County"
         return f"{self.user.get_full_name() or self.user.username} - {constituency_name} [{self.get_bursary_type_display()}]"
@@ -361,7 +376,34 @@ class SupportRequest(models.Model):
         return self.officer_action
 
 
+
+class Banner(models.Model):
+    """
+    Generic landing banners (large images) — officer-scoped.
+    """
+    site_profile = models.ForeignKey(
+        "bursary.SiteProfile", on_delete=models.CASCADE, related_name="banners", db_index=True
+    )
+    image = models.ImageField(upload_to="banners/")
+    title = models.CharField(max_length=200, blank=True, null=True)
+    caption = models.CharField(max_length=300, blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order"]
+        verbose_name = "Banner"
+        verbose_name_plural = "Banners"
+
+    def __str__(self):
+        return f"{self.site_profile} - Banner #{self.id}"
+
+
 class LandingSlide(models.Model):
+    site_profile = models.ForeignKey(
+        "bursary.SiteProfile", on_delete=models.CASCADE, null=True, blank=True, related_name="slides"
+    )
     headline = models.CharField(max_length=255, blank=True, null=True)
     subheadline = models.CharField(max_length=255, blank=True, null=True)
     button_text = models.CharField(max_length=100, blank=True, null=True)
@@ -381,7 +423,11 @@ class LandingSlide(models.Model):
         return self.headline or f"Slide {self.id}"
 
 
+# Update SuccessStory to scope by site_profile
 class SuccessStory(models.Model):
+    site_profile = models.ForeignKey(
+        "bursary.SiteProfile", on_delete=models.CASCADE, null=True, blank=True, related_name="success_stories"
+    )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to="landing/success_stories/", blank=True, null=True)
@@ -397,6 +443,29 @@ class SuccessStory(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Announcement(models.Model):
+    """
+    Short announcements, deadlines, small posts with optional image — officer-scoped.
+    """
+    site_profile = models.ForeignKey(
+        "bursary.SiteProfile", on_delete=models.CASCADE, related_name="announcements"
+    )
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    image = models.ImageField(upload_to="announcements/", null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    pinned = models.BooleanField(default=False, help_text="Pin at top of list")
+    created_by = models.ForeignKey("bursary.OfficerProfile", on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-pinned", "-created_at"]
+
+    def __str__(self):
+        return f"{self.title} — {self.site_profile}"
+
 
 
 
