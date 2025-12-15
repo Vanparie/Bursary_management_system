@@ -547,8 +547,9 @@ class UserForm(forms.ModelForm):
         fields = ['email']
 
 
+
 # ========================
-# Officer Forms
+# Officer User Form
 # ========================
 class OfficerUserForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}), required=True)
@@ -585,12 +586,20 @@ class OfficerUserForm(forms.ModelForm):
         return user
 
 
+# ========================
+# Officer Profile Form (Manager creates officer)
+# ========================
 class OfficerProfileForm(forms.ModelForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    can_manage_content = forms.BooleanField(
+        required=False,
+        label="Can Manage Content",
+        help_text="Allow this officer to manage slides, banners, success stories, and branding."
+    )
 
     class Meta:
         model = OfficerProfile
-        fields = ['phone', 'profile_pic', 'designation']
+        fields = ['phone', 'profile_pic', 'designation', 'can_manage_content']
         widgets = {
             'designation': forms.TextInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
@@ -606,21 +615,20 @@ class OfficerProfileForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         email = cleaned_data.get("email")
-
-        # Safely handle user lookup even if not yet linked
         user = getattr(self.instance, "user", None)
-
         if email:
             qs = User.objects.filter(email=email)
             if user and user.pk:
                 qs = qs.exclude(pk=user.pk)
             if qs.exists():
                 self.add_error("email", "This email address is already in use.")
-
         return cleaned_data
 
-    def save(self, commit=True):
+    def save(self, commit=True, creator=None):
         officer = super().save(commit=False)
+        # Assign created_by only if provided (i.e., manager creating officer)
+        if creator and not officer.pk:
+            officer.created_by = creator
         email = self.cleaned_data.get('email')
         if email and hasattr(officer, 'user'):
             officer.user.email = email
@@ -630,12 +638,15 @@ class OfficerProfileForm(forms.ModelForm):
         return officer
 
 
+# ========================
+# Officer Self Profile Form (officer updates own profile)
+# ========================
 class OfficerSelfProfileForm(forms.ModelForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
 
     class Meta:
         model = OfficerProfile
-        fields = ['phone', 'profile_pic']
+        fields = ['phone', 'profile_pic']  # Note: no can_manage_content here
         widgets = {
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'profile_pic': forms.FileInput(attrs={'class': 'form-control'}),
@@ -650,17 +661,13 @@ class OfficerSelfProfileForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         email = cleaned_data.get("email")
-
-        # Safely handle missing user link
         user = getattr(self.instance, "user", None)
-
         if email:
             qs = User.objects.filter(email=email)
             if user and user.pk:
                 qs = qs.exclude(pk=user.pk)
             if qs.exists():
                 self.add_error("email", "This email address is already in use.")
-
         return cleaned_data
 
     def save(self, commit=True):
@@ -714,3 +721,63 @@ class SupportRequestForm(forms.ModelForm):
             'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Describe your issue in detail'}),
         }
 
+
+from django import forms
+from bursary.models import Banner, LandingSlide, SuccessStory, Announcement
+from django.core.exceptions import ValidationError
+
+class BannerForm(forms.ModelForm):
+    class Meta:
+        model = Banner
+        fields = ["image", "title", "caption", "order", "is_active"]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "caption": forms.TextInput(attrs={"class": "form-control"}),
+            "order": forms.NumberInput(attrs={"class": "form-control"}),
+            "is_active": forms.CheckboxInput(),
+        }
+
+class LandingSlideForm(forms.ModelForm):
+    class Meta:
+        model = LandingSlide
+        fields = ["headline", "subheadline", "button_text", "button_url", "image", "order", "is_active"]
+        widgets = {
+            "headline": forms.TextInput(attrs={"class": "form-control"}),
+            "subheadline": forms.TextInput(attrs={"class": "form-control"}),
+            "button_text": forms.TextInput(attrs={"class": "form-control"}),
+            "button_url": forms.URLInput(attrs={"class": "form-control"}),
+            "order": forms.NumberInput(attrs={"class": "form-control"}),
+        }
+
+class SuccessStoryForm(forms.ModelForm):
+    class Meta:
+        model = SuccessStory
+        fields = ["title", "description", "image", "order", "is_active"]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            "order": forms.NumberInput(attrs={"class": "form-control"}),
+        }
+
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = ["title", "message", "image", "pinned", "is_active"]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "message": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            "pinned": forms.CheckboxInput(),
+            "is_active": forms.CheckboxInput(),
+        }
+
+
+from bursary.models import SiteProfile
+
+class SiteProfileForm(forms.ModelForm):
+    class Meta:
+        model = SiteProfile
+        fields = ["branding_name", "branding_logo", "application_deadline"]
+        widgets = {
+            "branding_name": forms.TextInput(attrs={"class": "form-control"}),
+            "application_deadline": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+        }
