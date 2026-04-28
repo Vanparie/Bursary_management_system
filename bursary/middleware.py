@@ -6,9 +6,9 @@ from .models import OfficerProfile
 from .models import Student  
 
 EXEMPT_PATHS = [
-    reverse("admin:index"),  # admin UI
-    getattr(settings, "NO_ACCESS_URL", "/no-access/"),
-    # add other exempt paths here
+    reverse("admin:index"),
+    "/no-access/",
+    "/student_no-access/",
 ]
 
 class ActiveSiteProfileMiddleware:
@@ -61,8 +61,13 @@ class ActiveSiteProfileMiddleware:
 
             # Student enforcement
             student = getattr(user, "student", None)
-            if student and student.site_profile != site_profile:
-                return redirect(getattr(settings, "NO_ACCESS_URL", "/no-access/"))
+            if student:
+                if request.path.startswith("/student/"):
+                    return self.get_response(request)
+
+                if student.site_profile != site_profile:
+                    return redirect(getattr(settings, "NO_ACCESS_URL", "/student_no-access/"))
+
 
         return self.get_response(request)
 

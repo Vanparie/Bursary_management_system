@@ -3,7 +3,33 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <h3 class="fw-bold mb-4"> Officer Activity Logs</h3>
+    <h3 class="fw-bold mb-4">Officer Activity Logs</h3>
+
+    {% if is_manager %}
+    <!-- Filters for managers -->
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <input type="text" name="officer" value="{{ request.GET.officer }}" class="form-control" placeholder="Search officer">
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="start_date" value="{{ request.GET.start_date }}" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="end_date" value="{{ request.GET.end_date }}" class="form-control">
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button class="btn btn-primary flex-grow-1">Filter</button>
+            <a href="{% url 'officer_logs' %}" class="btn btn-secondary flex-grow-1">Reset</a>
+        </div>
+    </form>
+
+    <!-- Export button for managers with current filters -->
+    <div class="mb-3 text-end">
+        <a href="{% url 'export_officer_logs' %}?{% if request.GET %}{{ request.GET.urlencode }}{% endif %}" class="btn btn-sm btn-success">
+            ⬇️ Export Logs CSV
+        </a>
+    </div>
+    {% endif %}
 
     {% if logs %}
     <div class="card shadow-sm border-0">
@@ -12,6 +38,9 @@
                 <thead class="table-dark">
                     <tr>
                         <th>#</th>
+                        {% if is_manager %}
+                        <th>Officer</th>
+                        {% endif %}
                         <th>Action</th>
                         <th>Description</th>
                         <th>Timestamp</th>
@@ -21,6 +50,9 @@
                     {% for log in logs %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
+                        {% if is_manager %}
+                        <td>{{ log.officer.user.get_full_name|default:log.officer.user.username }}</td>
+                        {% endif %}
                         <td>{{ log.action }}</td>
                         <td>{{ log.description|default:"-" }}</td>
                         <td>{{ log.timestamp|date:"M d, Y H:i" }}</td>
@@ -36,17 +68,21 @@
         <ul class="pagination justify-content-center">
             {% if logs.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ logs.previous_page_number }}">Previous</a>
+                <a class="page-link" href="?page={{ logs.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode|safe|cut:'page=' }}{% endif %}">Previous</a>
             </li>
             {% endif %}
 
-            <li class="page-item active">
-                <span class="page-link">{{ logs.number }}</span>
-            </li>
+            {% for page_num in logs.paginator.page_range %}
+                {% if page_num >= logs.number|add:"-3" and page_num <= logs.number|add:"3" %}
+                    <li class="page-item {% if page_num == logs.number %}active{% endif %}">
+                        <a class="page-link" href="?page={{ page_num }}{% if request.GET %}&{{ request.GET.urlencode|safe|cut:'page=' }}{% endif %}">{{ page_num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
 
             {% if logs.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ logs.next_page_number }}">Next</a>
+                <a class="page-link" href="?page={{ logs.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode|safe|cut:'page=' }}{% endif %}">Next</a>
             </li>
             {% endif %}
         </ul>
@@ -57,3 +93,7 @@
     {% endif %}
 </div>
 {% endblock %}
+
+
+
+

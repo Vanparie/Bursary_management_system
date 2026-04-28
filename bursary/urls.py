@@ -15,6 +15,7 @@ urlpatterns = [
     path('', views.landing_page, name='landing_page'),
     #path("showcase/", views.LandingContent, name="landing_content"),
     path('no-access/', views.no_access_view, name='no_access'),
+    path('student_no-access/', views.student_no_access_view, name='student_no_access'),
     path('', views.home, name ='home'),
 
     # Student section
@@ -24,7 +25,6 @@ urlpatterns = [
 
     path('student/signup/', signup_view, name='student_signup'),
     path('student/login/', views.student_login_view, name='student_login'),
-    #path('verify-login/', views.verify_login, name='verify_login'),
     path('student/logout/', auth_views.LogoutView.as_view(next_page='landing_page'), name='logout'),
     path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
     path('student/apply/', views.apply_bursary, name='apply_bursary'),
@@ -36,9 +36,9 @@ urlpatterns = [
     path('student/change-password/', views.change_password, name='change_password'),
     #path('change-password/', views.change_password_from_dashboard, name='change_password_dashboard'),
     path('student/profile/delete-picture/', views.delete_profile_picture, name='delete_profile_picture'),
-    path('support/', views.contact_support_view, name='contact_support'),
+    path('student/support/', views.contact_support_view, name='contact_support'),
     path('student/support/requests/', views.student_support_requests_view, name='student_support_requests'),
-    path("support/request/<int:pk>/", views.student_support_request_detail, name="student_support_request_detail"),
+    path("student/support/request/<int:pk>/", views.student_support_request_detail, name="student_support_request_detail"),
 
 
     # Officer panel

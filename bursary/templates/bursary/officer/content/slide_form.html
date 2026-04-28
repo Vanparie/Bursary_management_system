@@ -1,8 +1,8 @@
 {% extends "bursary/officer_base.html" %}
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ action }} Slide{% endblock %}
 {% block content %}
 
-<h4>{{ title }}</h4>
+<h4>{{ action }} Slide</h4>
 
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}

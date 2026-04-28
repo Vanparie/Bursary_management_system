@@ -67,6 +67,9 @@ from django.db.models import Sum
 
 from bursary.officer.decorators import manager_required, officer_required, officer_required_can_manage_content
 
+from django.db.models import Q
+from django.core.paginator import Paginator
+from datetime import datetime, timedelta
 
 # Notes:
 # - csrf_exempt should be removed unless you absolutely need it for a specific endpoint.
@@ -88,6 +91,9 @@ from django.shortcuts import render
 
 def no_access_view(request):
     return render(request, 'bursary/no_access.html')
+
+def student_no_access_view(request):
+    return render(request, 'bursary/student_no_access.html')
 
 # ========================
 # Student Bursary Application View
@@ -585,6 +591,8 @@ def officer_dashboard(request):
 # ========================
 @login_required
 def student_dashboard(request):
+    if not hasattr(request.user, "student"):
+        return redirect("student_no_access")
     student = Student.objects.filter(user=request.user).select_related("user", "constituency").first()
     if not student:
         messages.error(request, "Student profile not found.")
@@ -702,14 +710,34 @@ def application_preview(request):
 @login_required
 @officer_required
 def officer_applications(request):
+    officer = request.user.officer_profile
+
+    # Officer must belong to a constituency
+    if not officer.constituency:
+        return render(request, "bursary/officer_applications.html", {
+            "applications": [],
+            "wards": [],
+            "selected_status": "",
+            "selected_ward": "",
+            "search_query": "",
+        })
+
+    # --------------------
+    # Base queryset (STRICTLY scoped)
+    # --------------------
     applications = (
         BursaryApplication.objects
-        .select_related("student", "constituency")
-        .defer("feedback")  # ⚡ skip heavy text fields unless needed
+        .select_related("student", "ward", "constituency")
+        .filter(constituency=officer.constituency)
+        .defer("feedback")
     )
 
+    # --------------------
+    # Filters
+    # --------------------
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "")
+    ward_id = request.GET.get("ward", "")
 
     if query:
         applications = applications.filter(
@@ -723,13 +751,26 @@ def officer_applications(request):
     if status:
         applications = applications.filter(status=status)
 
-    paginator = Paginator(applications, 20)  # ✅ paginate to avoid huge loads
+    if ward_id:
+        applications = applications.filter(ward_id=ward_id)
+
+    # --------------------
+    # Pagination
+    # --------------------
+    paginator = Paginator(applications, 20)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
+    # --------------------
+    # Wards for filter dropdown
+    # --------------------
+    wards = Ward.objects.filter(constituency=officer.constituency)
+
     return render(request, "bursary/officer_applications.html", {
         "applications": page_obj,
+        "wards": wards,
         "selected_status": status,
+        "selected_ward": ward_id,
         "search_query": query,
         "page_obj": page_obj,
     })
@@ -1527,41 +1568,97 @@ def delete_officer(request, officer_id):
     return render(request, "bursary/confirm_delete.html", {"officer": officer})
 
 
-# ========================
-# Officer Logs
-# ========================
 @login_required
 @officer_required
 def officer_logs(request):
     officer = getattr(request.user, "officer_profile", None)
     if not officer:
-        messages.error(request, "You are not authorized to view this page.")
         return redirect("officer_login")
 
-    logs = OfficerActivityLog.objects.filter(officer=officer).order_by("-timestamp")
+    logs = OfficerActivityLog.objects.select_related("officer", "officer__user").order_by("-timestamp")
+
+    # Managers can filter all logs
+    if officer.is_manager:
+        search_officer = request.GET.get("officer", "").strip()
+        start_date = request.GET.get("start_date", "")
+        end_date = request.GET.get("end_date", "")
+
+        if search_officer:
+            logs = logs.filter(
+                Q(officer__user__first_name__icontains=search_officer) |
+                Q(officer__user__last_name__icontains=search_officer) |
+                Q(officer__user__username__icontains=search_officer)
+            )
+
+        if start_date:
+            try:
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                logs = logs.filter(timestamp__gte=start_dt)
+            except ValueError:
+                pass
+
+        if end_date:
+            try:
+                end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1) - timedelta(seconds=1)
+                logs = logs.filter(timestamp__lte=end_dt)
+            except ValueError:
+                pass
+
+    else:
+        # Officers see only their own logs
+        logs = logs.filter(officer=officer)
+
     paginator = Paginator(logs, 10)
     page_number = request.GET.get("page")
     logs_page = paginator.get_page(page_number)
 
-    return render(request, "bursary/officer_logs.html", {"logs": logs_page})
+    return render(request, "bursary/officer_logs.html", {
+        "logs": logs_page,
+        "is_manager": officer.is_manager,
+    })
 
 
 @login_required
 def export_officer_logs(request):
-    officer = getattr(request.user, "officer_profile", None)
-    if not officer:
+    officer_profile = getattr(request.user, "officer_profile", None)
+    if not officer_profile or not officer_profile.is_manager:
         messages.error(request, "You are not authorized to export logs.")
-        return redirect("officer_login")
+        return redirect("officer_logs")
+
+    logs = OfficerActivityLog.objects.select_related("officer__user").all()
+
+    officer_name = request.GET.get("officer", "").strip()
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    if officer_name:
+        logs = logs.filter(
+            Q(officer__user__first_name__icontains=officer_name) |
+            Q(officer__user__last_name__icontains=officer_name) |
+            Q(officer__user__username__icontains=officer_name)
+        )
+
+    if start_date:
+        logs = logs.filter(timestamp__date__gte=start_date)
+    if end_date:
+        logs = logs.filter(timestamp__date__lte=end_date)
+
+    logs = logs.order_by("-timestamp")
 
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="officer_logs.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(["Officer Username", "Action", "Description", "Timestamp"])
+    writer.writerow(["Officer Username", "Full Name", "Action", "Description", "Timestamp"])
 
-    logs = OfficerActivityLog.objects.filter(officer=officer).order_by("-timestamp").select_related("officer__user")
     for log in logs:
-        writer.writerow([log.officer.user.username, log.action, log.description, log.timestamp])
+        writer.writerow([
+            log.officer.user.username,
+            log.officer.user.get_full_name(),
+            log.action,
+            log.description or "",
+            log.timestamp,
+        ])
 
     return response
 

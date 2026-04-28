@@ -2,7 +2,7 @@
 {% block title %}{{ title }} Announcement{% endblock %}
 {% block content %}
 
-<h4>{{ title }} Announcement</h4>
+<h4>{{ action }} Announcement</h4>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.non_field_errors }}
