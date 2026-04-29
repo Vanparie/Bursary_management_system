@@ -4,7 +4,11 @@ import io
 import json
 
 # Third-party (PDF / report libraries)
-import weasyprint
+#import weasyprint
+try:
+    import weasyprint
+except ImportError:
+    weasyprint = None
 from xhtml2pdf import pisa
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.pagesizes import A4, landscape
