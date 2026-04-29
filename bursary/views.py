@@ -4,16 +4,23 @@ import io
 import json
 
 # Third-party (PDF / report libraries)
-#import weasyprint
 try:
     import weasyprint
 except ImportError:
     weasyprint = None
-from xhtml2pdf import pisa
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    pisa = None
+
+try:
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+except ImportError:
+    SimpleDocTemplate = None
 
 # Django
 from django.contrib import messages
@@ -401,7 +408,7 @@ def upgrade_to_id_view(request):
 
             # Update student profile
             student.id_number = new_id
-            student.nemis_number = None  # 🚨 retire old NEMIS, prevent duplication/fraud
+            student.nemis_number = None  # retire old NEMIS, prevent duplication/fraud
             student.save(update_fields=["id_number", "nemis_number"])
 
             # Update user login username
@@ -1117,6 +1124,9 @@ def application_pdf(request):
         messages.error(request, "No application found. Please apply first.")
         return redirect("apply_bursary")
 
+    if not pisa and not weasyprint and not SimpleDocTemplate:
+        return HttpResponse("PDF generation not available in this environment.")
+
     return render_to_pdf("bursary/pdf_template.html", {
         "student": student,
         "application": application,
@@ -1124,6 +1134,7 @@ def application_pdf(request):
         "siblings": siblings,
         "supporting_documents": supporting_documents,
     })
+
 
 
 # ========================
@@ -1357,6 +1368,9 @@ def application_pdf(request):
     })
 
     pdf_file = weasyprint.HTML(string=html).write_pdf()
+
+    if not pisa and not weasyprint and not SimpleDocTemplate:
+        return HttpResponse("PDF generation not available in this environment.")
     return FileResponse(io.BytesIO(pdf_file), content_type="application/pdf", filename="bursary_application.pdf")
 
 
