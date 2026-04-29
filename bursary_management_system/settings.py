@@ -16,9 +16,11 @@ SECRET_KEY = config("SECRET_KEY")
 
 DEBUG = config("DEBUG", cast=bool, default=False)
 
-ALLOWED_HOSTS = [
-    host for host in config("ALLOWED_HOSTS", default="").split(",") if host
-]
+# ALLOWED_HOSTS = [
+#     host for host in config("ALLOWED_HOSTS", default="").split(",") if host
+# ]
+
+ALLOWED_HOSTS = ['*']  # temporary for Render
 
 # Toggle for production security (HTTPS, cookies, etc.)
 SECURE_MODE = config("SECURE_MODE", cast=bool, default=False)
@@ -92,19 +94,40 @@ TEMPLATES = [
 # -----------------------
 # DATABASE (MySQL)
 # -----------------------
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": config("DB_NAME"),
-        "USER": config("DB_USER"),
-        "PASSWORD": config("DB_PASSWORD"),
-        "HOST": config("DB_HOST", default="localhost"),
-        "PORT": config("DB_PORT", cast=int, default=3306),
-        "OPTIONS": {
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'"
-        },
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": config("DB_NAME"),
+#         "USER": config("DB_USER"),
+#         "PASSWORD": config("DB_PASSWORD"),
+#         "HOST": config("DB_HOST", default="localhost"),
+#         "PORT": config("DB_PORT", cast=int, default=3306),
+#         "OPTIONS": {
+#             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'"
+#         },
+#     }
+# }
+
+
+# -----------------------
+# DATABASE (SQLite)
+# -----------------------
+
+import dj_database_url
+
+DATABASE_URL = config("DATABASE_URL", default=None)
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL)
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 # -----------------------
 # REDIS (OPTIONAL CACHE)
