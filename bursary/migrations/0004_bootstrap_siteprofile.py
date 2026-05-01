@@ -27,7 +27,7 @@ def create_siteprofile(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("bursary", "0001_initial"),
+        ("bursary", "0003_siteprofile_slug"),
     ]
 
     operations = [
