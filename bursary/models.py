@@ -239,6 +239,8 @@ class SiteProfile(models.Model):
         default="Constituency",
     )
 
+    slug = models.SlugField(unique=True, null=True, blank=True)
+
     # Branding
     branding_name = models.CharField(max_length=255, default="BursaryFlow")
     branding_logo = models.ImageField(upload_to="branding/", null=True, blank=True)
