@@ -233,10 +233,10 @@ def apply_bursary(request):
 # ========================
 def signup_view(request):
     # Use the site profile from middleware if available
-    site_profile = getattr(request, "site_profile", None) or SiteProfile.get_active()
+    site_profile = getattr(request, "site_profile", None)
 
     if not site_profile:
-        messages.error(request, "❌ System misconfiguration: No active site profile found.")
+        messages.error(request, "No site profile found for this domain.")
         return redirect("student_login")
 
     county_name = site_profile.county.name if site_profile.county else None

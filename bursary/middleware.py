@@ -57,7 +57,8 @@ class TenantMiddleware:
 
         # 🔹 2. Fallback (root domain)
         if not site_profile:
-            site_profile = SiteProfile.get_active()
+            request.site_profile = None
+            return self.get_response(request)
 
         request.site_profile = site_profile
 
