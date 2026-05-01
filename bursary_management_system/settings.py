@@ -59,8 +59,6 @@ MIDDLEWARE = [
 
     "bursary.middleware.TenantMiddleware",
 
-    "bursary.middleware.ActiveSiteProfileMiddleware",
-
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
